@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     internal class HotkeyEventArgs : EventArgs
     {

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Windows.Forms;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     static class Program
     {

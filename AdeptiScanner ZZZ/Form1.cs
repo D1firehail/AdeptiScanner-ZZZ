@@ -17,7 +17,7 @@ using Tesseract;
 using InputSimulatorEx;
 using System.Net.Http;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     public partial class ScannerForm : Form
     {
@@ -96,7 +96,7 @@ namespace AdeptiScanner_GI
             label_dataversion.Text = "Data: V" + Database.dataVersion;
             label_appversion.Text = "Program: V" + Database.programVersion;
             label_admin.Text = "Admin: " + IsAdministrator();
-            this.Text = "AdeptiScanner_GI V" + Database.programVersion;
+            this.Text = "AdeptiScanner_ZZZ V" + Database.programVersion;
             FormClosing += eventFormClosing;
             Activated += eventGotFocus;
             try
@@ -1291,7 +1291,7 @@ namespace AdeptiScanner_GI
             Process myProcess = new Process();
 
             myProcess.StartInfo.UseShellExecute = true;
-            myProcess.StartInfo.FileName = "https://github.com/D1firehail/AdeptiScanner-GI";
+            myProcess.StartInfo.FileName = "https://github.com/D1firehail/AdeptiScanner-ZZZ";
             myProcess.Start();
         }
 
@@ -1475,7 +1475,7 @@ namespace AdeptiScanner_GI
             {
                 try
                 {
-                    var request = webclient.GetStringAsync("https://api.github.com/repos/D1firehail/AdeptiScanner-GI/releases");
+                    var request = webclient.GetStringAsync("https://api.github.com/repos/D1firehail/AdeptiScanner-ZZZ/releases");
                     bool requestCompleted = request.Wait(TimeSpan.FromMinutes(1));
                     if (!requestCompleted)
                     {
@@ -1513,7 +1513,7 @@ namespace AdeptiScanner_GI
             {
                 try
                 {
-                    var request = webclient.GetStringAsync("https://raw.githubusercontent.com/D1firehail/AdeptiScanner-GI/master/AdeptiScanner%20GI/ScannerFiles/ArtifactInfo.json");
+                    var request = webclient.GetStringAsync("https://raw.githubusercontent.com/D1firehail/AdeptiScanner-ZZZ/master/AdeptiScanner%20ZZZ/ScannerFiles/ArtifactInfo.json");
                     bool requestCompleted = request.Wait(TimeSpan.FromMinutes(1));
                     if (!requestCompleted)
                     {
@@ -1597,7 +1597,7 @@ namespace AdeptiScanner_GI
             Process myProcess = new Process();
 
             myProcess.StartInfo.UseShellExecute = true;
-            myProcess.StartInfo.FileName = "https://github.com/D1firehail/AdeptiScanner-GI/releases/latest";
+            myProcess.StartInfo.FileName = "https://github.com/D1firehail/AdeptiScanner-ZZZ/releases/latest";
             myProcess.Start();
 
             Application.Exit();

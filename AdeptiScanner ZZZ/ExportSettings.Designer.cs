@@ -1,5 +1,5 @@
 ﻿
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     partial class ExportSettings
     {

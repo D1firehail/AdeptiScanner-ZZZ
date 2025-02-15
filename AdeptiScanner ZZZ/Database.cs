@@ -6,7 +6,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     #region IParsable stuff
     public interface IParsableData

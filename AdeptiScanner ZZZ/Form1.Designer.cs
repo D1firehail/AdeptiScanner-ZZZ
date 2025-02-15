@@ -1,5 +1,5 @@
 ﻿
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     partial class ScannerForm
     {
@@ -708,7 +708,7 @@ namespace AdeptiScanner_GI
             Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             MinimumSize = new System.Drawing.Size(756, 590);
             Name = "ScannerForm";
-            Text = "AdeptiScanner_GI";
+            Text = "AdeptiScanner_ZZZ";
             ((System.ComponentModel.ISupportInitialize)image_preview).EndInit();
             tableLayoutPanel4.ResumeLayout(false);
             tableLayoutPanel4.PerformLayout();

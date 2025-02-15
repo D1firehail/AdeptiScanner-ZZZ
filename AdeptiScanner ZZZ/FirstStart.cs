@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     public partial class FirstStart : Form
     {

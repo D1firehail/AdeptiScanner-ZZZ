@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     //Minor modifications, based on https://stackoverflow.com/questions/18291448/how-do-i-detect-keypress-while-not-focused
     public class KeyHandler

@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Tesseract;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     class ImageProcessing
     {

@@ -5,7 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     public partial class EnkaTab : UserControl
     {

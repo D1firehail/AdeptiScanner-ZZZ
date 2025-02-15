@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     [ToolboxItem(true)]
     public partial class ExportSettings : UserControl

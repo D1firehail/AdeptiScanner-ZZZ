@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     public class Character
     {

@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     public class Artifact
     {

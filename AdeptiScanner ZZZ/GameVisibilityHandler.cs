@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     class GameVisibilityHandler
     {

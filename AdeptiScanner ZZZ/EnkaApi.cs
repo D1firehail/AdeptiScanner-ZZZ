@@ -6,7 +6,7 @@ using System.Net;
 using System;
 using System.Net.Http.Headers;
 
-namespace AdeptiScanner_GI
+namespace AdeptiScanner_ZZZ
 {
     internal static class EnkaApi
     {
