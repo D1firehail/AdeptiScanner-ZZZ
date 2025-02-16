@@ -567,16 +567,8 @@ namespace AdeptiScanner_ZZZ
         /// <param name="area">Area containing the artifact info</param>
         /// <param name="rows">Filter results per row</param>
         /// <returns>Filtered image of the artifact area</returns>
-        public static Bitmap getArtifactImg(Bitmap img, Rectangle area, out int[] rows, bool saveImages, out bool locked, out int rarity, out Rectangle typeMainArea, out Rectangle levelArea, out Rectangle subArea, out Rectangle setArea, out Rectangle charArea)
+        public static Bitmap getDiscImg(Bitmap img, Rectangle area, out int[] rows, bool saveImages)
         {
-            typeMainArea = Rectangle.Empty;
-            levelArea = Rectangle.Empty;
-            subArea = Rectangle.Empty;
-            setArea = Rectangle.Empty;
-            charArea = Rectangle.Empty;
-            rarity = 0;
-
-            locked = false;
             rows = new int[area.Height];
             //Get relevant part of image
             Bitmap areaImg = new Bitmap(area.Width, area.Height);
@@ -591,142 +583,30 @@ namespace AdeptiScanner_ZZZ
             int numBytes = Math.Abs(imgData.Stride) * imgData.Height;
             byte[] imgBytes = new byte[numBytes];
             Marshal.Copy(imgData.Scan0, imgBytes, 0, numBytes);
-            int PixelSize = 4; //ARGB, reverse order
-            //some variables to keep track of which part of the image we are in
-            int section = 0; //0 = top part, 1 = artifact level part, 2 = substats, 3 = set, 4 = character
-            int sectionStart = 0;
-            int sectionEnd = 0;
-            int rightEdge = 0;
-            int leftEdge = width - 1;
-            int line_rarity = 0;
+            int PixelSize = 4; //ARGB, reverse order            
             for (int i = 0; i < numBytes; i += PixelSize)
             {
                 int x = (i / PixelSize) % width;
                 int y = (i / PixelSize - x) / width;
-                int y_below = Math.Min(((y + 1) * width + x) * PixelSize, numBytes - PixelSize - 1);
                 var pixel = imgBytes.AsSpan(i, 4);
-                var pixelBelow = imgBytes.AsSpan(y_below, 4);
-                if (
-                    (section == 0 && x < width * 0.55 && PixelIsColor(pixel, GameColor.TextWhiteIsh)) //look for white-ish text, skip right edge (artifact image)
-                    || (section == 1 && x < width * 0.55 && (PixelIsColor(pixel, GameColor.TextBrightWhite) || PixelIsColor(pixelBelow, GameColor.TextBrightWhite))) //look for bright white text, skip right edge
-                    || (section == 2 && PixelIsColor(pixel, GameColor.TextBlackIsh)) //look for black
-                    || (section == 3 && PixelIsColor(pixel, GameColor.TextGreen)) //look for green
-                    || (section == 4 && x > width * 0.15 && PixelIsColor(pixel, GameColor.TextBlackIsh)) // look for black, skip left edge (character head)
-                    )
+                if (PixelIsColor(pixel, GameColor.PerfectWhite)) // Make the white text black and everything else white
                 {
-                    //Make Black
+                    rows[y]++;
                     imgBytes[i] = 0;
                     imgBytes[i + 1] = 0;
                     imgBytes[i + 2] = 0;
                     imgBytes[i + 3] = 255;
-                    rows[y]++;
-                    if (x > rightEdge)
-                        rightEdge = x;
-                    if (x < leftEdge && x != 0)
-                        leftEdge = x;
                 }
                 else
                 {
-                    if (section == 0 && line_rarity >= 0 && x < width/2) 
-                    {
-
-                        //if section 0, look for yellow with non-yellow before
-                        var nextPixel = imgBytes.AsSpan(i + PixelSize, 4);
-                        if (PixelIsColor(pixel, GameColor.StarYellow) && !PixelIsColor(nextPixel, GameColor.StarYellow))
-                        {
-                            line_rarity++;
-                        }
-                    }
-
-                    if ( section == 1 && PixelIsColor(pixel, GameColor.LockRed))
-                    {
-                        //if section 1, look for red lock
-                        locked = true;
-                    } else if (section == 2 && PixelIsColor(pixel, GameColor.TextGreen))
-                    {
-                        //if section 2, look for green text
-                        subArea = new Rectangle(0, levelArea.Bottom, levelArea.Width, y - levelArea.Bottom);
-                        setArea = new Rectangle(0, subArea.Bottom, width, height - subArea.Bottom);
-                        section = 3;
-                    } else if (section == 3 && PixelIsColor(pixel, GameColor.BackgroundCharacterArea))
-                    {
-                        // if section 3, look for beginning of character label
-                        setArea = new Rectangle(setArea.X, setArea.Y, setArea.Width, y - setArea.Y);
-                        charArea = new Rectangle(0, y, width, height - y);
-                        section = 4;
-                    }
-
-                    //Make White
                     imgBytes[i] = 255;
                     imgBytes[i + 1] = 255;
                     imgBytes[i + 2] = 255;
                     imgBytes[i + 3] = 255;
                 }
-
-                if (x == 0)
-                {
-                    if (line_rarity > 0)
-                    {
-                        //set rarity on two consecutive identical results
-                        if (rarity == line_rarity)
-                        {
-                            rarity = line_rarity;
-                            line_rarity = -1;
-                        }
-                        else
-                        {
-                            rarity = line_rarity;
-                            line_rarity = 0;
-                        }
-                    }
-                    if (section == 0)
-                    {
-                        //check if coming row is white-ish, if so move to section 1
-                        int tmp = (y * width + (int)(width * 0.05)) * PixelSize;
-                        var tmpPixel = imgBytes.AsSpan(tmp, 4);
-                        if (PixelIsColor(tmpPixel, GameColor.BackgroundWhiteIsh))
-                        {
-                            //Make White
-                            imgBytes[i] = 255;
-                            imgBytes[i + 1] = 255;
-                            imgBytes[i + 2] = 255;
-                            imgBytes[i + 3] = 255;
-
-                            typeMainArea = new Rectangle(0, 0, (int)(width * 0.55), y);
-                            section = 1;
-                            i += width * PixelSize;
-                        }
-
-                    }
-                    else if (section == 1)
-                    {
-                        if (y == sectionEnd)
-                        {
-                            levelArea = new Rectangle(0, sectionStart, (int)(width * 0.55), sectionEnd - sectionStart);
-                            section = 2;
-                            sectionStart = 0;
-                            sectionEnd = 0;
-                        }
-                        else if (sectionEnd == 0 && sectionStart != 0 && rows[y - 1] == 0)
-                        {
-                            sectionEnd = y + (y - sectionStart);
-                        }
-                        else if (sectionStart == 0 && rows[y - 1] != 0)
-                        {
-                            sectionStart = y - 1;
-                        }
-                    }
-                }
             }
             Marshal.Copy(imgBytes, 0, imgData.Scan0, numBytes);
             areaImg.UnlockBits(imgData);
-
-            Bitmap thinImg = new Bitmap(rightEdge - leftEdge, height);
-            using (Graphics g = Graphics.FromImage(thinImg))
-            {
-                g.DrawImage(areaImg, 0, 0, new Rectangle(leftEdge, 0, rightEdge - leftEdge, height), GraphicsUnit.Pixel);
-            }
-            areaImg = thinImg;
 
             string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ssff");
             if (saveImages)
@@ -946,7 +826,7 @@ namespace AdeptiScanner_ZZZ
         /// </summary>
         /// <param name="img">Image of artifact area, filtered</param>
         /// <param name="rows">Filter results per row</param>
-        public static Artifact getArtifacts(Bitmap img, int[] rows, bool saveImages, TesseractEngine tessEngine, bool locked, int rarity, Rectangle typeMainArea, Rectangle levelArea, Rectangle subArea, Rectangle setArea, Rectangle charArea)
+        public static Disc getDisc(Bitmap img, int[] rows, bool saveImages, TesseractEngine tessEngine)
         {
             //get all potential text rows
             List<Tuple<int, int>> textRows = new List<Tuple<int, int>>();
@@ -963,70 +843,64 @@ namespace AdeptiScanner_ZZZ
                 textRows.Add(Tuple.Create(Math.Max(0, rowTop - 3), Math.Min(height - 1, i + 3)));
             }
 
-            //first row guaranteed to be of no use (artifact name etc)
-            textRows.RemoveAt(0);
+            var disc = new Disc();
 
-
-            Artifact foundArtifact = new Artifact();
-            foundArtifact.locked = locked;
-            foundArtifact.rarity = rarity;
+            string prevRaw = "";
             i = 0;
-            //Piece type
-            while (i < textRows.Count && textRows[i].Item2 <= typeMainArea.Top)
-                i++;
-            for (; i < textRows.Count && textRows[i].Item2 > typeMainArea.Top; i++)
+            //Set and slot
+            for (; i < textRows.Count; i++)
             {
-                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.Pieces, out PieceData? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
-                if (bestMatch.HasValue && dist < 3)
+                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.DiscSets, out DiscSetAndSlot? bestMatch, out int dist, out string rawText, prevRaw, saveImages, tessEngine);
+                prevRaw = rawText;
+                if (bestMatch.HasValue && dist < 3 && (rawText.Contains('[') || rawText.Contains(']')))
                 {
-                    foundArtifact.piece = bestMatch.Value;
+                    disc.slot = bestMatch.Value;
                     i++;
                     break;
                 }
             }
+
+            //Level and rarity
+            for (; i < textRows.Count; i++)
+            {
+                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.DiscLevels, out DiscLevelAndRarity? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
+                
+                if (bestMatch.HasValue && dist < 2)
+                {
+                    disc.level = bestMatch.Value;
+                    i++;
+                    break;
+                }
+            }
+
+            if (!disc.level.HasValue)
+            {
+                return disc;
+            }
+
+            int rarity = (int)disc.level.Value.Tier;
 
             //Main stat
-            string prevRaw = "";
-            while (i < textRows.Count && textRows[i].Item2 <= typeMainArea.Top)
-                i++;
-            for (; i < textRows.Count && textRows[i].Item2 > typeMainArea.Top; i++)
-            {
-                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity-1].MainStats, out ArtifactMainStatData? bestMatch, out int dist, out string rawText, prevRaw, saveImages, tessEngine);
-                
-                if (bestMatch.HasValue && dist < rawText.Length - 2 && rawText.Length - 2 >= Regex.Replace(rawText, @"[0-9]", "").Length)
-                {
-                    foundArtifact.main = bestMatch.Value;
-                    i++;
-                    break;
-                }
-                prevRaw = rawText;
-            }
 
-            //Level
-            while (i < textRows.Count && textRows[i].Item2 <= levelArea.Top)
-                i++;
-            for (; i < textRows.Count && textRows[i].Item2 > levelArea.Top; i++)
+            for (; i < textRows.Count; i++)
             {
-                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.ArtifactLevels, out ArtifactLevelData? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
+                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity].DiscMainStats, out DiscMainStat? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
                 if (bestMatch.HasValue && rawText.Length != 0)
                 {
-                    foundArtifact.level = bestMatch.Value;
+                    disc.main = bestMatch.Value;
                     i++;
                     break;
                 }
             }
 
             //Substats
-            foundArtifact.subs = new List<ArtifactSubStatData>();
             int substat = 0;
-            while (i < textRows.Count && textRows[i].Item2 <= subArea.Top)
-                i++;
-            for (; i < textRows.Count && textRows[i].Item2 > subArea.Top; i++)
+            for (; i < textRows.Count; i++)
             {
-                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity-1].Substats, out ArtifactSubStatData? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
-                if (bestMatch.HasValue &&dist < 3)
+                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity].DiscSubStats, out DiscSubStat? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
+                if (bestMatch.HasValue && dist < 3)
                 {
-                    foundArtifact.subs.Add(bestMatch.Value);
+                    disc.subs.Add(bestMatch.Value);
                     if (substat > 2)
                     {
                         i++;
@@ -1040,39 +914,8 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-            //Set
-            int startRow = i;
-            prevRaw = "";
-            while (i < textRows.Count && textRows[i].Item2 <= setArea.Top)
-                i++;
-            for (; i < textRows.Count && textRows[i].Item2 > setArea.Top; i++)
-            {
-                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity-1].Sets, out ArtifactSetData? bestMatch, out int dist, out string rawText, prevRaw, saveImages, tessEngine);
-                if (bestMatch.HasValue && dist < 5)
-                {
-                    foundArtifact.set = bestMatch.Value;
-                    break;
-                }
-                else
-                {
-                    prevRaw = rawText;
-                    if (startRow - i > 4)
-                        break;
-                }
-            }
 
-            //Character
-            for (i = textRows.Count - 1; i > Math.Max(0, textRows.Count - 6) && textRows[i].Item1 > charArea.Top - 10  ; i--)
-            {
-                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.Characters, out CharacterNameData? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
-                if (bestMatch.HasValue && dist < 5)
-                {
-                    foundArtifact.character = bestMatch.Value;
-                    break;
-                }
-            }
-
-            return foundArtifact;
+            return disc;
         }
 
         public static Weapon getWeapon(Bitmap img, int[] rows, bool saveImages, TesseractEngine tessEngine, bool locked, Rectangle nameArea, Rectangle statArea, Rectangle refinementArea, Rectangle charArea)

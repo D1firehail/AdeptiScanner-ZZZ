@@ -39,6 +39,7 @@ namespace AdeptiScanner_ZZZ
         internal bool autoRunning = false;
         private bool autoCaptureDone = false;
         internal List<Artifact> scannedArtifacts = new List<Artifact>();
+        internal List<Disc> scannedDiscs = new List<Disc>();
         internal List<Weapon> scannedWeapons = new List<Weapon>();
         internal List<Character> scannedCharacters = new List<Character>();
         private bool cancelOCRThreads = false;
@@ -340,11 +341,11 @@ namespace AdeptiScanner_ZZZ
                         }
                         else
                         {
-                            filtered = ImageProcessing.getArtifactImg(filtered, area, out int[] rows, saveImages, out bool locked, out int rarity, out Rectangle typeMainArea, out Rectangle levelArea, out Rectangle subArea, out Rectangle setArea, out Rectangle charArea);
+                            filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, saveImages);
 
-                            Artifact item = ImageProcessing.getArtifacts(filtered, rows, saveImages, threadEngines[threadIndex], locked, rarity, typeMainArea, levelArea, subArea, setArea, charArea);
+                            Disc item = ImageProcessing.getDisc(filtered, rows, saveImages, threadEngines[threadIndex]);
 
-                            if (Database.artifactInvalid(rarity, item))
+                            if (Database.discInvalid(item))
                             {
                                 badResults.Enqueue(img);
                             }
@@ -624,8 +625,8 @@ namespace AdeptiScanner_ZZZ
                     Bitmap filtered = new Bitmap(img);
                     string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ssff");
                     filtered.Save(Path.Join(Database.appDir, "images", "GenshinArtifactImg_" + timestamp + ".png"));
-                    filtered = ImageProcessing.getArtifactImg(filtered, area, out int[] rows, true, out bool locked, out int rarity, out Rectangle typeMainArea, out Rectangle levelArea, out Rectangle subArea, out Rectangle setArea, out Rectangle charArea);
-                    Artifact item = ImageProcessing.getArtifacts(filtered, rows, true, tessEngine, locked, rarity, typeMainArea, levelArea, subArea, setArea, charArea);
+                    filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, true);
+                    Disc item = ImageProcessing.getDisc(filtered, rows, true, tessEngine);
                     AppendStatusText(item.ToString() + Environment.NewLine, false);
                 }
 
@@ -1130,17 +1131,17 @@ namespace AdeptiScanner_ZZZ
             else
             {
 
-                img_Filtered = ImageProcessing.getArtifactImg(img_Filtered, readArea, out filtered_rows, saveImages, out bool locked, out int rarity, out Rectangle typeMainArea, out Rectangle levelArea, out Rectangle subArea, out Rectangle setArea, out Rectangle charArea);
-                Artifact artifact = ImageProcessing.getArtifacts(img_Filtered, filtered_rows, saveImages, tessEngine, locked, rarity, typeMainArea, levelArea, subArea, setArea, charArea);
-                if (Database.artifactInvalid(rarity, artifact))
+                img_Filtered = ImageProcessing.getDiscImg(img_Filtered, readArea, out filtered_rows, saveImages);
+                Disc disc = ImageProcessing.getDisc(img_Filtered, filtered_rows, saveImages, tessEngine);
+                if (Database.discInvalid(disc))
                 {
-                    displayInventoryItem(artifact);
+                    displayInventoryItem(disc);
                     text_full.AppendText(Environment.NewLine + "---This artifact is invalid---" + Environment.NewLine);
                 }
                 else
                 {
-                    scannedArtifacts.Add(artifact);
-                    displayInventoryItem(artifact);
+                    scannedDiscs.Add(disc);
+                    displayInventoryItem(disc);
                 }
                 text_full.AppendText(Environment.NewLine + "Total stored artifacts:" + scannedArtifacts.Count + Environment.NewLine);
 

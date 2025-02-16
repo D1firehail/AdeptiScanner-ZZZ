@@ -59,6 +59,33 @@ namespace AdeptiScanner_ZZZ
         public string GetPlainText() => BaseAtk;
     }
 
+    public readonly record struct DiscSetAndSlot(string Text, string Key, int Slot) : IParsableData
+    {
+        public string GetPlainText() => Text;
+    }
+
+    public enum Rarity
+    {
+        B,
+        A,
+        S
+    }
+
+    public readonly record struct DiscLevelAndRarity(string Text, int Level, Rarity Tier) : IParsableData
+    {
+        public string GetPlainText() => Text;
+    }
+
+    public readonly record struct DiscMainStat(string Text, string Key, int Level) : IParsableData
+    {
+        public string GetPlainText() => Text;
+    }
+
+    public readonly record struct DiscSubStat(string Text, string Key, int Upgrades) : IParsableData
+    {
+        public string GetPlainText() => Text;
+    }
+
     #endregion
 
     class Database
@@ -84,6 +111,13 @@ namespace AdeptiScanner_ZZZ
         public List<ArtifactMainStatData> MainStats = new List<ArtifactMainStatData>();
         public List<ArtifactSubStatData> Substats = new List<ArtifactSubStatData>();
         public List<ArtifactSetData> Sets = new List<ArtifactSetData>();
+
+        public static List<DiscSetAndSlot> DiscSets = new List<DiscSetAndSlot>();
+
+        public static List<DiscLevelAndRarity> DiscLevels = new List<DiscLevelAndRarity>();
+
+        public List<DiscMainStat> DiscMainStats = new List<DiscMainStat>();
+        public List<DiscSubStat> DiscSubStats = new List<DiscSubStat>();
 
         public Database()
         {
@@ -346,6 +380,51 @@ namespace AdeptiScanner_ZZZ
             {
                 rarityData[i] = new Database();
             }
+            List<(string Name, string Key)> discSets = new()
+            {
+                ("Shockstar Disco", "ShockstarDisco"),
+                ("Branch & Blade Song", "BranchBladeSong"),
+            };
+
+            foreach (var setTuple in discSets)
+            {
+                for (int i = 1; i <= 6; i++)
+                {
+                    Database.DiscSets.Add(new DiscSetAndSlot(setTuple.Name + " [" + i + "]", setTuple.Key, i));
+                }
+            }
+
+            for (int i = 0; i <= 9; i++)
+            {
+                Database.DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/09", i, Rarity.B));
+            }
+
+            for (int i = 0; i <= 12; i++)
+            {
+                Database.DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/12", i, Rarity.A));
+            }
+
+            for (int i = 0; i <= 15; i++)
+            {
+                Database.DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/15", i, Rarity.S));
+            }
+
+            Database.rarityData[(int)Rarity.B].DiscMainStats.AddRange(new[]
+            {
+                new DiscMainStat("HP 183", "hp", 0),
+                new DiscMainStat("ATK 26", "atk", 0),
+                new DiscMainStat("DEF 15", "def", 0),
+                new DiscMainStat("CRIT DMG 4%", "critDmg_", 0),
+            });
+
+            Database.rarityData[(int)Rarity.B].DiscSubStats.AddRange(new[]
+            {
+                new DiscSubStat("HP 1%", "hp_", 1),
+                new DiscSubStat("ATK 1%", "atk_", 1),
+                new DiscSubStat("DEF 1.6%", "def_", 1),
+            });
+
+
             //Main stat filter
             JObject allJson = new JObject();
             try
@@ -440,14 +519,9 @@ namespace AdeptiScanner_ZZZ
             }
         }
 
-        public static bool artifactInvalid(int rarity, Artifact item)
+        public static bool discInvalid(Disc item)
         {
-            return rarity < 0 || rarity > 5 || item.piece == null || item.main == null || item.level == null || item.subs == null || item.set == null
-                || (rarity == 1 && (item.level.Value.Key > 4 || item.subs.Count > 1)) 
-                || (rarity == 2 && (item.level.Value.Key > 4 || item.subs.Count > 2)) 
-                || (rarity == 3 && (item.level.Value.Key > 12 || item.subs.Count > 4 || item.subs.Count < 1))
-                || (rarity == 4 && (item.level.Value.Key > 16 || item.subs.Count > 4 || item.subs.Count < 2)) 
-                || (rarity == 5 && (item.level.Value.Key > 20 || item.subs.Count > 4 || item.subs.Count < 3));
+            return true;
         }
 
         public static bool weaponInvalid(Weapon item)

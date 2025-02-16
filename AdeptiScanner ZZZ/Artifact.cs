@@ -217,7 +217,7 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-            if (Database.artifactInvalid(res.rarity, res))
+            if (Database.discInvalid(new Disc()))
             {
                 ScannerForm.INSTANCE.AppendStatusText("Failed to parse artifact: " + GOODArtifact.ToString(Newtonsoft.Json.Formatting.None) + Environment.NewLine, false);
                 return null;
