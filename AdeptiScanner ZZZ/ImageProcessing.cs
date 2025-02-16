@@ -289,61 +289,97 @@ namespace AdeptiScanner_ZZZ
             areaImg.UnlockBits(imgData);
             int PixelSize = 4; //ARGB, reverse order
 
+            var gameAreaWidth = gameArea.Width;
+            var gameAreaHeight = gameArea.Height;
+
             for (int i = 0; i < numBytes; i += PixelSize)
             {
-                int x = (i / PixelSize) % gameArea.Width;
+                int x = (i / PixelSize) % gameAreaWidth;
                 var pixel = imgBytes.AsSpan(i, 4);
-                if (PixelIsColor(pixel, GameColor.BackgroundArtifactName)) //look for artifact name background colour
+                if (PixelIsColor(pixel, GameColor.PerfectBlack) || PixelIsColor(pixel, GameColor.PerfectWhite)) //look for artifact name background colour
                 {
                     cols[x]++;
                 }
             }
 
-            //Find artifact text columns
-            int edgewidth = 0;
-            //find right edge
-            while (cols[cols.Length - 1 - edgewidth] / (double)gameArea.Height < 0.02)
-                edgewidth++;
-            int rightmost = cols.Length - edgewidth - 1;
-            //find left edge
-            int leftmost = rightmost - edgewidth;
-            int misses = 0;
-            while (leftmost - misses > 0 && misses < edgewidth)
+            int streakLength = 0;
+            int streakLocation = cols.Length - 1;
+            bool isInStreak = false;
+
+            for(int x = cols.Length - 1; x >= 0; x--)
             {
-                if (cols[leftmost - misses] / (double)gameArea.Height > 0.01)
+                if (cols[x] > gameAreaHeight * 0.25)
                 {
-                    leftmost -= misses + 1;
-                    misses = 0;
-                }
+                    if (isInStreak)
+                    {
+                        streakLength++;
+                    } else
+                    {
+                        streakLength = 1;
+                        streakLocation = x;
+                        isInStreak = true;
+                    }
+                } 
                 else
                 {
-                    misses++;
+                    if (isInStreak && streakLength > gameAreaHeight / 3)
+                    {
+                        break;
+                    } else
+                    {
+                        isInStreak = false;
+                    }
                 }
             }
-            leftmost = Math.Min(leftmost+3, gameArea.Width - 1);
 
+            if (!isInStreak || streakLocation - streakLength <= 0)
+            {
+                throw new Exception("No long enough streak, or streak ran into edge");
+            }
+
+            int rightmost = streakLocation;
+            int leftmost = streakLocation - streakLength;
 
             int top = 0;
+            int verticalBlackStreak = 0;
             for (int y = top; y < gameArea.Height - 1; y++)
             {
-                int i = (y * gameArea.Width + (leftmost * 3 + rightmost) / 4) * PixelSize;
+                int i = (y * gameArea.Width + leftmost + 1 ) * PixelSize;
                 var pixel = imgBytes.AsSpan(i, 4);
-                if (PixelIsColor(pixel, GameColor.BackgroundArtifactName)) //look for artifact name background colour
+                if (PixelIsColor(pixel, GameColor.PerfectBlack)) //look for artifact name background colour
                 {
-                    top = y;
-                    break;
+                    verticalBlackStreak++;
+
+                    if (verticalBlackStreak > 10)
+                    {
+                        top = y - verticalBlackStreak;
+                        break;
+                    }
+                } else
+                {
+                    verticalBlackStreak = 0;
                 }
             }
 
+            verticalBlackStreak = 0;
             int height = gameArea.Height - 1;
             for (int y = height; y > top; y--)
             {
-                int i = (y * gameArea.Width + (leftmost*3 + rightmost )/4) * PixelSize;
+                int i = (y * gameArea.Width + leftmost + 1) * PixelSize;
                 var pixel = imgBytes.AsSpan(i, 4);
-                if (PixelIsColor(pixel, GameColor.BackgroundCharacterArea) || PixelIsColor(pixel, GameColor.BackgroundWhiteIsh)) //look for white-ish text background
+                if (PixelIsColor(pixel, GameColor.PerfectBlack)) //look for white-ish text background
                 {
-                    height = y - top;
-                    break;
+                    verticalBlackStreak++;
+
+                    if (verticalBlackStreak > 10)
+                    {
+                        height = y + verticalBlackStreak - top;
+                        break;
+                    }
+                }
+                else
+                {
+                    verticalBlackStreak = 0;
                 }
             }
 
@@ -777,8 +813,8 @@ namespace AdeptiScanner_ZZZ
                 int width = (i_pos + i_neg);
 
                 //find bottom
-                int height = 10;
-                while (height < fullHeight - y - 1)
+                int height = fullHeight - y - 1;
+                while (height > 10)
                 {
                     int row = 0;
                     int currStreak = 0;
@@ -787,7 +823,7 @@ namespace AdeptiScanner_ZZZ
                     {
                         index = ((y + height) * fullWidth + left + i) * PixelSize;
                         pixel = imgBytes.AsSpan(index, 4);
-                        if (PixelIsColor(pixel, GameColor.BackgroundWhiteIsh))
+                        if (PixelIsColor(pixel, GameColor.PerfectBlack))
                         {
                             row++;
                             currStreak++;
@@ -803,7 +839,7 @@ namespace AdeptiScanner_ZZZ
                     if (row > width * 0.3 * 0.65 && maxStreak > width * 0.3 * 0.25)
                         break;
 
-                    height++;
+                    height--;
                 }
                 return new Rectangle(left, top, width, height);
             }
@@ -1148,6 +1184,8 @@ namespace AdeptiScanner_ZZZ
             StarYellow, // rarity star
             LockRed, // lock icon
 
+            PerfectBlack, // Disc card background
+            PerfectWhite, // Disc card background
         }
 
         /// <summary>
@@ -1189,6 +1227,12 @@ namespace AdeptiScanner_ZZZ
                     return pixel[0] < 60 && pixel[1] > 190 && pixel[2] > 240;
                 case GameColor.LockRed:
                     return pixel[0] < 150 && pixel[1] > 120 && pixel[2] > 200;
+
+
+                case GameColor.PerfectBlack:
+                    return pixel[0] == 0&& pixel[1] == 0 && pixel[2] == 0;
+                case GameColor.PerfectWhite:
+                    return pixel[0] == 255 && pixel[1] == 255 && pixel[2] == 255;
             }
             
             throw new NotImplementedException("No filter defined for GameColor " + color);

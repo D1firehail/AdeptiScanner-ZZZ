@@ -18,10 +18,10 @@ namespace AdeptiScanner_ZZZ
             {
                 return false;
             }
-            Process[] ans = Process.GetProcessesByName("GenshinImpact");
+            Process[] ans = Process.GetProcessesByName("ZenlessZoneZero");
             foreach(Process proc in ans)
             {
-                if (proc.MainWindowTitle == "Genshin Impact")
+                if (proc.MainWindowTitle == "ZenlessZoneZero")
                 {
                     game = proc.MainWindowHandle;
                     break;
