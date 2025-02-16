@@ -873,18 +873,26 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-            if (!disc.level.HasValue)
+            if (!disc.level.HasValue || !disc.slot.HasValue)
             {
                 return disc;
             }
 
             int rarity = (int)disc.level.Value.Tier;
 
+            // cut out the numbers from image for use with main stat.
+            using Bitmap narrowImage = new Bitmap(img);
+            using (Graphics g = Graphics.FromImage(narrowImage))
+            {
+                g.FillRectangle(Brushes.White, new Rectangle((int)(width * 0.75), 0, height, width));
+            }
+
+
             //Main stat
 
             for (; i < textRows.Count; i++)
             {
-                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity].DiscMainStats, out DiscMainStat? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
+                string result = OCRRow(narrowImage, textRows[i].Item1, textRows[i].Item2, Database.DiscMainStats[disc.slot.Value.Slot], out DiscMainStat? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
                 if (bestMatch.HasValue && rawText.Length != 0)
                 {
                     disc.main = bestMatch.Value;

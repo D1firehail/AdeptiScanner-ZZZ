@@ -76,7 +76,7 @@ namespace AdeptiScanner_ZZZ
         public string GetPlainText() => Text;
     }
 
-    public readonly record struct DiscMainStat(string Text, string Key, int Level) : IParsableData
+    public readonly record struct DiscMainStat(string Text, string Key) : IParsableData
     {
         public string GetPlainText() => Text;
     }
@@ -99,7 +99,7 @@ namespace AdeptiScanner_ZZZ
         public static List<PieceData> Pieces = new List<PieceData>();
         public static List<CharacterNameData> Characters = new List<CharacterNameData>();
         public static List<ArtifactLevelData> ArtifactLevels = new List<ArtifactLevelData>();
-        public static Database[] rarityData = new Database[5];
+        public static Database[] rarityData = new Database[3];
         public static List<WeaponNameData> WeaponNames = new List<WeaponNameData>();
         public static Dictionary<WeaponNameData, List<WeaponLevelAndAscensionData>> WeaponLevels = new Dictionary<WeaponNameData, List<WeaponLevelAndAscensionData>>();
 
@@ -113,10 +113,9 @@ namespace AdeptiScanner_ZZZ
         public List<ArtifactSetData> Sets = new List<ArtifactSetData>();
 
         public static List<DiscSetAndSlot> DiscSets = new List<DiscSetAndSlot>();
-
         public static List<DiscLevelAndRarity> DiscLevels = new List<DiscLevelAndRarity>();
+        public static Dictionary<int, List<DiscMainStat>> DiscMainStats = new();
 
-        public List<DiscMainStat> DiscMainStats = new List<DiscMainStat>();
         public List<DiscSubStat> DiscSubStats = new List<DiscSubStat>();
 
         public Database()
@@ -209,7 +208,7 @@ namespace AdeptiScanner_ZZZ
         }
 
 
-        void ReadMainStats(JArray mainStats)
+        static void ReadMainStats(JArray mainStats, List<DiscMainStat> mainStatList)
         {
             foreach (JObject mainStat in mainStats)
             {
@@ -217,20 +216,7 @@ namespace AdeptiScanner_ZZZ
                 {
                     string statName = statNameTup.Key;
                     string statKey = statNameTup.Value.ToObject<string>();
-
-                    List<double> statValues = mainStat["value"].ToObject<List<double>>();
-                    for (int i = 0; i < statValues.Count; i++) 
-                    { 
-                        double statValue = statValues[i];
-                        string text = statName + statValue.ToString("N0", culture);
-                        if (statName.Contains("%"))
-                        {
-                            text = statName + statValue.ToString("N1", culture);
-                            text = text.Replace("%", "") + "%";
-                        }
-                        MainStats.Add( new ArtifactMainStatData(text, statKey, statValue, i));
-                        //Console.WriteLine(text + " ---- " + statValue);
-                    }
+                    mainStatList.Add(new DiscMainStat(statName, statKey));
                 }
             }
         }
@@ -245,129 +231,25 @@ namespace AdeptiScanner_ZZZ
                     string statKey = statNameTup.Value.ToObject<string>();
                     List<int> baserolls = new List<int>();
                     List<int> rolls = new List<int>();
-                    foreach (double statValue in substat["rolls"].ToObject<List<double>>())
-                    {
-                        baserolls.Add((int)(statValue * 100));
-                        rolls.Add((int)(statValue * 100));
 
-                    }
+                    double step = substat["step"].ToObject<double>();
 
-                    int start = 0;
-                    int stop = rolls.Count;
-                    for (int i = 0; i < 5; i++)
+                    bool showDecimal = Math.Abs(Math.Round(step) - step) > 0.001; // difference from rounded value is beyond precision, so it's not intended to be an int
+
+                    for(int i = 1; i <= 6; i++)
                     {
-                        for (int j = start; j < stop; j++)
-                        {
-                            foreach (int value in baserolls)
-                            {
-                                int tmp = rolls[j] + value;
-                                if (!rolls.Contains(tmp))
-                                    rolls.Add(tmp);
-                            }
-                        }
-                        start = stop;
-                        stop = rolls.Count;
-                    }
-                    foreach (int value_int in rolls)
-                    {
-                        double value = value_int / 100.0 + 0.001;
-                        string text = statName + value.ToString("N0", culture);
+                        double value = step * i;
+
+                        string valueString = showDecimal ? value.ToString("N1", culture) : value.ToString("N0", culture);
+
+                        string text = statName + valueString;
                         if (statName.Contains("%"))
                         {
-                            text = statName + value.ToString("N1", culture);
-                            value = Math.Round(value, 1);
                             text = text.Replace("%", "") + "%";
-                        } else
-                        {
-                            value = Math.Round(value, 0);
                         }
-                        Substats.Add( new ArtifactSubStatData(text, statKey, value));
+                        DiscSubStats.Add(new DiscSubStat(text, statKey, i));
                     }
                 }
-            }
-        }
-
-        void readSets(JArray sets)
-        {
-            foreach (JObject set in sets)
-            {
-                foreach (KeyValuePair<string, JToken> statNameTup in set["name"].ToObject<JObject>())
-                {
-                    string statName = statNameTup.Key;
-                    string statKey = statNameTup.Value.ToObject<string>();
-                    string text = statName + "";
-                    Sets.Add(new ArtifactSetData(text, statKey));
-                }
-            }
-        }
-
-        static void readCharacters(JArray characters)
-        {
-            foreach (JObject character in characters)
-            {
-                foreach (KeyValuePair<string, JToken> statNameTup in character["name"].ToObject<JObject>())
-                {
-                    string statName = statNameTup.Key;
-                    string statKey = statNameTup.Value.ToObject<string>();
-                    string text = "Equipped: " + statName;
-                    Characters.Add(new CharacterNameData(text, statKey));
-                    //Console.WriteLine(text);
-                }
-            }
-        }
-
-        static void readPieces(JArray pieces)
-        {
-            foreach (JObject piece in pieces)
-            {
-                foreach (KeyValuePair<string, JToken> statNameTup in piece["name"].ToObject<JObject>())
-                {
-                    string statName = statNameTup.Key;
-                    string statKey = statNameTup.Value.ToObject<string>();
-                    string text = statName;
-                    Pieces.Add(new PieceData(text, statKey));
-                    //Console.WriteLine(text);
-                }
-            }
-        }
-
-        static void readEnka(JArray enka)
-        {
-            foreach (JObject data in enka)
-            {
-                if (data["name"].ToObject<string>().Equals("charNames") )
-                {
-                    CharacterNames = data["data"].ToObject<Dictionary<int, string>>();
-                }
-
-                if (data["name"].ToObject<string>().Equals("skillTypes"))
-                {
-                    SkillTypes = data["data"].ToObject<Dictionary<string, string>>();
-                }
-            }
-        }
-
-        static void readWeapons(JArray weapons)
-        {
-            foreach (JObject weapon in weapons)
-            {
-                string name = weapon["name"].ToObject<string>();
-                string key = weapon["key"].ToObject<string>();
-                int rarity = weapon["rarity"].ToObject<int>();
-                WeaponNameData nameData = new WeaponNameData(name, key, rarity);
-                WeaponNames.Add(nameData);
-
-                List<JObject> stats = weapon["stats"].ToObject<List<JObject>>();
-                List<WeaponLevelAndAscensionData> levelsAndAscensions = new List<WeaponLevelAndAscensionData>();
-
-                foreach (var statPoint in stats)
-                {
-                    string baseAtk = statPoint["baseAtk"].ToObject<string>();
-                    int level = statPoint["level"].ToObject<int>();
-                    int ascension = statPoint["ascension"].ToObject<int>();
-                    levelsAndAscensions.Add( new WeaponLevelAndAscensionData(baseAtk, level, ascension) );
-                }
-                WeaponLevels[nameData] = levelsAndAscensions;
             }
         }
 
@@ -380,19 +262,7 @@ namespace AdeptiScanner_ZZZ
             {
                 rarityData[i] = new Database();
             }
-            List<(string Name, string Key)> discSets = new()
-            {
-                ("Shockstar Disco", "ShockstarDisco"),
-                ("Branch & Blade Song", "BranchBladeSong"),
-            };
 
-            foreach (var setTuple in discSets)
-            {
-                for (int i = 1; i <= 6; i++)
-                {
-                    Database.DiscSets.Add(new DiscSetAndSlot(setTuple.Name + " [" + i + "]", setTuple.Key, i));
-                }
-            }
 
             for (int i = 0; i <= 9; i++)
             {
@@ -408,22 +278,6 @@ namespace AdeptiScanner_ZZZ
             {
                 Database.DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/15", i, Rarity.S));
             }
-
-            Database.rarityData[(int)Rarity.B].DiscMainStats.AddRange(new[]
-            {
-                new DiscMainStat("HP 183", "hp", 0),
-                new DiscMainStat("ATK 26", "atk", 0),
-                new DiscMainStat("DEF 15", "def", 0),
-                new DiscMainStat("CRIT DMG 4%", "critDmg_", 0),
-            });
-
-            Database.rarityData[(int)Rarity.B].DiscSubStats.AddRange(new[]
-            {
-                new DiscSubStat("HP 1%", "hp_", 1),
-                new DiscSubStat("ATK 1%", "atk_", 1),
-                new DiscSubStat("DEF 1.6%", "def_", 1),
-            });
-
 
             //Main stat filter
             JObject allJson = new JObject();
@@ -446,63 +300,63 @@ namespace AdeptiScanner_ZZZ
             foreach (KeyValuePair<string, JToken> entry in allJson)
             {
                 JArray entry_arr = entry.Value.ToObject<JArray>();
-                if (entry.Key == "ArtifactTiers")
+
+                if (entry.Key == "Sets")
+                {
+                    foreach (JObject set in entry_arr)
+                    {
+                        foreach (KeyValuePair<string, JToken> statNameTup in set["name"].ToObject<JObject>())
+                        {
+                            string statName = statNameTup.Key;
+                            string statKey = statNameTup.Value.ToObject<string>();
+                            for (int i = 1; i <= 6; i++)
+                            {
+                                string text = statName + " [" + i + "]";
+                                DiscSets.Add(new DiscSetAndSlot(text, statKey, i));
+                            }
+                        }
+                    }
+                }
+
+                if (entry.Key == "DiscSlots")
+                {
+                    foreach (JObject slot in entry_arr)
+                    {
+                        int slotNum = slot["slot"].ToObject<int>();
+                        List<DiscMainStat> mainStatList = new();
+                        foreach (KeyValuePair<string, JToken> statNameTup in slot["data"].ToObject<JObject>())
+                        {
+                            if(statNameTup.Key == "MainStats")
+                            {
+                                ReadMainStats(statNameTup.Value.ToObject<JArray>(), mainStatList);
+                            }
+                        }
+
+                        DiscMainStats[slotNum] = mainStatList;
+                    }
+                }
+
+
+                if (entry.Key == "DiscTiers")
                 {
                     foreach (JObject rarityTier in entry_arr)
                     {
-                        int rarity = rarityTier["rarity"].ToObject<int>();
+                        Rarity rarity = rarityTier["rarity"].ToObject<Rarity>();
+                        int rarityInt = (int)rarity;
                         JObject tierData = rarityTier["data"].ToObject<JObject>();
 
                         foreach (KeyValuePair<string, JToken> rarityEntry in tierData)
                         {
                             JArray rarityEntry_arr = rarityEntry.Value.ToObject<JArray>();
-                            if (rarityEntry.Key == "MainStats")
-                            {
-                                rarityData[rarity - 1].ReadMainStats(rarityEntry_arr);
-                            }
-
+                            
                             if (rarityEntry.Key == "Substats")
                             {
-                                rarityData[rarity - 1].readSubstats(rarityEntry_arr);
-                            }
-
-                            if (rarityEntry.Key == "Sets")
-                            {
-                                rarityData[rarity - 1].readSets(rarityEntry_arr);
+                                rarityData[rarityInt].readSubstats(rarityEntry_arr);
                             }
                         }
                     }
-
                 }
 
-                if (entry.Key == "Characters")
-                {
-                    readCharacters(entry_arr);
-                }
-
-                if (entry.Key == "Pieces")
-                {
-                    readPieces(entry_arr);
-                }
-
-                if (entry.Key == "Weapons")
-                {
-                    readWeapons(entry_arr);
-                }
-
-                if (entry.Key == "Enka")
-                {
-                    readEnka(entry_arr);
-                }
-
-            }
-
-            //Level filter
-            for (int i = 0; i < 21; i++)
-            {
-                string text = "+" + i;
-                int statValue = i;
-                ArtifactLevels.Add(new ArtifactLevelData(text, statValue));
             }
         }
 
