@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -38,9 +37,11 @@ namespace AdeptiScanner_ZZZ
             }
 
 
-            List<Tuple<int, int, int>> artifactListTuple = new List<Tuple<int, int, int>>(); //start and end x, y for found artifacts in grid
+            List<(int StartX, int EndX, int Y)> artifactListTuple = new(); //start and end x, y for found artifacts in grid
             int currStreak = 0;
             int margin = 4;
+            GameColor? targetColor = null;
+
             for (int i = 0; i < numBytes; i += PixelSize)
             {
                 int x = (i / PixelSize) % width;
@@ -49,8 +50,27 @@ namespace AdeptiScanner_ZZZ
                 int i_low = (y_low * width + x) * PixelSize;
                 var pixel = imgBytes.AsSpan(i, 4);
                 var pixelBelow = imgBytes.AsSpan(i_low, 4);
-                if (PixelIsColor(pixel, GameColor.StarYellow) //look for yellow (stars + background)
-                    && PixelIsColor(pixelBelow, GameColor.BackgroundGridLabel)) // white white-ish or black-ish below
+
+                if (!targetColor.HasValue)
+                {
+                    if (PixelIsColor(pixel, GameColor.ArtifactLabelB))
+                    {
+                        targetColor = GameColor.ArtifactLabelB;
+                    } 
+                    else if (PixelIsColor(pixel, GameColor.ArtifactLabelA))
+                    {
+                        targetColor = GameColor.ArtifactLabelA;
+                    }
+                    else if(PixelIsColor(pixel, GameColor.ArtifactLabelS))
+                    {
+                        targetColor = GameColor.ArtifactLabelS;
+                    } else
+                    {
+                        continue;
+                    }
+                }
+
+                if (PixelIsColor(pixel, targetColor.Value))
                 {
                     if (saveImages)
                     {
@@ -71,7 +91,7 @@ namespace AdeptiScanner_ZZZ
                         continue;
                     }
 
-                    //investigate label if label+star streak long enough for a single star
+                    //investigate label if labelstreak long enough
                     if (currStreak > 5)
                     {
                         //find left edge
@@ -80,7 +100,7 @@ namespace AdeptiScanner_ZZZ
                         for (int left_i = (y_low * width + left) * PixelSize; left_i > y_low * width * PixelSize; left_i-= PixelSize)
                         {
                             var leftPixel = imgBytes.AsSpan(left_i, 4);
-                            if (PixelIsColor(leftPixel, GameColor.BackgroundGridLabel)) // white white-ish or black-ish line underneath
+                            if (PixelIsColor(leftPixel, targetColor.Value))
                             {
                                 margin = 3;
                             } else
@@ -103,7 +123,7 @@ namespace AdeptiScanner_ZZZ
                         for (int right_i = (y_low * width + right) * PixelSize; right_i < (y_low + 1) * width * PixelSize; right_i += PixelSize)
                         {
                             var rightPixel = imgBytes.AsSpan(right_i, 4);
-                            if (PixelIsColor(rightPixel, GameColor.BackgroundGridLabel)) // white white-ish or black-ish line underneath
+                            if (PixelIsColor(rightPixel, targetColor.Value))
                             {
                                 margin = 3;
                             }
@@ -122,21 +142,21 @@ namespace AdeptiScanner_ZZZ
                         }
 
                         //if wide enough, add to grid results
-                        if (right - left > width / 16)
+                        if (right - left > width / 24)
                         {
                             bool alreadyFound = false;
                             for (int j = 0; j < artifactListTuple.Count; j++)
                             {
                                 //skip if start or end x, and y is close to an existing found artifactList
-                                if ((artifactListTuple[j].Item1 <= left && artifactListTuple[j].Item2 >= left)
-                                    || (artifactListTuple[j].Item1 <= right && artifactListTuple[j].Item2 >= right)
-                                    || (left <= artifactListTuple[j].Item1 && right >= artifactListTuple[j].Item1)
-                                    || (left <= artifactListTuple[j].Item2 && right >= artifactListTuple[j].Item2))
+                                if ((artifactListTuple[j].StartX <= left && artifactListTuple[j].EndX >= left)
+                                    || (artifactListTuple[j].StartX <= right && artifactListTuple[j].EndX >= right)
+                                    || (left <= artifactListTuple[j].StartX && right >= artifactListTuple[j].StartX)
+                                    || (left <= artifactListTuple[j].EndX && right >= artifactListTuple[j].EndX))
                                 {
                                     if (Math.Abs(artifactListTuple[j].Item3 - y) < width * 0.07)
                                     {
-                                        artifactListTuple[j] = Tuple.Create(Math.Min(artifactListTuple[j].Item1, left),
-                                            Math.Max(artifactListTuple[j].Item2, right), y);
+                                        artifactListTuple[j] = (Math.Min(artifactListTuple[j].StartX, left),
+                                            Math.Max(artifactListTuple[j].EndX, right), y);
                                         alreadyFound = true;
                                         break;
                                     }
@@ -144,13 +164,13 @@ namespace AdeptiScanner_ZZZ
                             }
                             if (!alreadyFound)
                             {
-                                artifactListTuple.Add(Tuple.Create(left, right, y));
+                                artifactListTuple.Add((left, right, y));
                             }
                         }
                     }
 
-                    
                     currStreak = 0;
+                    targetColor = null;
                 }
 
 
@@ -162,9 +182,9 @@ namespace AdeptiScanner_ZZZ
             }
 
             List<Point> artifactListPoint = new List<Point>();
-            foreach (Tuple<int, int, int> tup in artifactListTuple)
+            foreach (var tup in artifactListTuple)
             {
-                artifactListPoint.Add(new Point(coordOffset.X + (tup.Item2 + tup.Item1) / 2, coordOffset.Y + tup.Item3));
+                artifactListPoint.Add(new Point(coordOffset.X + (tup.EndX + tup.StartX) / 2, coordOffset.Y + tup.Y));
             }
 
             string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ssff");
@@ -172,9 +192,9 @@ namespace AdeptiScanner_ZZZ
             {
                 using (Graphics g = Graphics.FromImage(areaImg))
                 {
-                    foreach (Tuple<int, int, int> tup in artifactListTuple)
+                    foreach (var tup in artifactListTuple)
                     {
-                        g.FillRectangle(Brushes.Cyan, tup.Item1, tup.Item3, tup.Item2 - tup.Item1, 3);
+                        g.FillRectangle(Brushes.Cyan, tup.StartX, tup.Y, tup.EndX - tup.StartX, 3);
                     }
                 }
                 areaImg.Save(Path.Join(Database.appDir, "images", "GenshinArtifactGridFiltered_" + timestamp + ".png"));
@@ -946,6 +966,10 @@ namespace AdeptiScanner_ZZZ
 
             PerfectBlack, // Disc card background
             VeryWhite, // Disc card text
+
+            ArtifactLabelB, // B rarity item label in grid
+            ArtifactLabelA, // A rarity item label in grid
+            ArtifactLabelS, // S rarity item label in grid
         }
 
         /// <summary>
@@ -990,9 +1014,17 @@ namespace AdeptiScanner_ZZZ
 
 
                 case GameColor.PerfectBlack:
-                    return pixel[0] == 0&& pixel[1] == 0 && pixel[2] == 0;
+                    return pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0;
                 case GameColor.VeryWhite:
                     return pixel[0] == pixel[1] && pixel[1] == pixel[2] && pixel[2] > 245;
+
+
+                case GameColor.ArtifactLabelB:
+                    return pixel[0] == 255 && pixel[1] == 169 && pixel[2] == 0;
+                case GameColor.ArtifactLabelA:
+                    return pixel[0] == 255 && pixel[1] == 0 && pixel[2] == 233;
+                case GameColor.ArtifactLabelS:
+                    return pixel[0] == 0 && pixel[1] == 181 && pixel[2] == 255;
             }
             
             throw new NotImplementedException("No filter defined for GameColor " + color);

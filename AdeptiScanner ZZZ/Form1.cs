@@ -380,7 +380,8 @@ namespace AdeptiScanner_ZZZ
                 int nextThread = 0;
                 Rectangle gridArea = new Rectangle(savedGameArea.X, savedGameArea.Y, savedDiscArea.X - savedGameArea.X, savedGameArea.Height);
                 Point gridOffset = new Point(gridArea.X, gridArea.Y);
-                List<string> foundHashes = new List<string>();
+                List<string> foundRowHashes = new List<string>();
+                List<(string Hash, Bitmap Image)> lastScrollLastRowHashes = new();
 
 
                 GameVisibilityHandler.bringGameToFront();
@@ -487,10 +488,38 @@ namespace AdeptiScanner_ZZZ
 
                     firstRun = false;
 
+                    if (!running && lastScrollLastRowHashes.Count > 0)
+                    {
+                        var finalHash = lastScrollLastRowHashes.Last().Hash;
+                        while(lastScrollLastRowHashes.Count > 1 && lastScrollLastRowHashes[^2].Hash == finalHash)
+                        {
+                            lastScrollLastRowHashes.RemoveAt(lastScrollLastRowHashes.Count - 1);
+                        }
+                    }
+
+
+                    foreach (var tup in lastScrollLastRowHashes)
+                    {
+                        //queue up processing of artifact
+                        threadQueues[nextThread].Enqueue(tup.Image);
+                        nextThread = (nextThread + 1) % ThreadCount;
+                    }
+
+                    lastScrollLastRowHashes.Clear();
+
                     //select and OCR each artifact in list
-                    bool repeat = false;
+                    int artisPerRow = artifactLocations.Count / rows;
+                    int artisThisRow = 0;
+                    List<(string Hash, Bitmap Image)> thisRowHashes = new();
+
                     for (int i = 0; i < artifactLocations.Count;)
                     {
+                        if (artisThisRow == 0)
+                        {
+                            thisRowHashes = new();
+                        }
+                        artisThisRow++;
+
                         Point p = artifactLocations[i];
                         while (pauseAuto)
                         {
@@ -527,37 +556,55 @@ namespace AdeptiScanner_ZZZ
                         //https://stackoverflow.com/a/800469 with some liberty
                         string hash = string.Concat(sha1.ComputeHash(imgBytes).Select(x => x.ToString("X2")));
 
-                        if (foundHashes.Contains(hash))
-                        {
-                            if (repeat)
-                            {
-                                if (running)
-                                {
-                                    AppendStatusText("Duplicate artifact found, stopping after this screen" + Environment.NewLine, false);
-                                }
-                                running = false;
-                                Console.WriteLine("Duplicate at " + p.ToString());
-                                repeat = false;
-                                i++;
-                                continue;
-                            }
-                            else
-                            {
-                                repeat = true;
-                                Console.WriteLine("Rechecking at " + p.ToString());
-                                System.Threading.Thread.Sleep(recheckSleepWait);
-                                continue;
-                            }
-
-                        }
-                        foundHashes.Add(hash);
-
-                        //queue up processing of artifact
-                        threadQueues[nextThread].Enqueue(artifactSC);
-                        nextThread = (nextThread + 1) % ThreadCount;
+                        thisRowHashes.Add((hash, artifactSC));
 
                         i++;
-                        repeat = false;
+                        if (artisThisRow != artisPerRow)
+                        {
+                            continue;
+                        }
+
+                        artisThisRow = 0;
+
+                        string thisRowHash = string.Concat(thisRowHashes.Select(x => x.Hash));
+
+                        if (foundRowHashes.Contains(thisRowHash))
+                        {
+                            if (running)
+                            {
+                                AppendStatusText("Duplicate row found, stopping after this screen" + Environment.NewLine, false);
+                            }
+                            running = false;
+                            continue;
+                        }
+
+                        foundRowHashes.Add(thisRowHash);
+
+                        bool isLastRow = i == artifactLocations.Count;
+
+                        if (isLastRow)
+                        {
+                            lastScrollLastRowHashes = thisRowHashes;
+
+                            if (!running && thisRowHashes.Count > 0)
+                            {
+                                var finalHash = thisRowHashes.Last().Hash;
+                                while (thisRowHashes.Count > 1 && thisRowHashes[^2].Hash == finalHash)
+                                {
+                                    thisRowHashes.RemoveAt(thisRowHashes.Count - 1);
+                                }
+                            }
+                        }
+
+                        if (!isLastRow || !running)
+                        { 
+                            foreach (var tup in thisRowHashes)
+                            {
+                                //queue up processing of artifact
+                                threadQueues[nextThread].Enqueue(tup.Image);
+                                nextThread = (nextThread + 1) % ThreadCount;
+                            }
+                        }
                     }
 
                 }
@@ -868,7 +915,7 @@ namespace AdeptiScanner_ZZZ
 
             int.TryParse(text_clickSleepWait.Text, out int clickSleepWait);
             if (clickSleepWait == 0)
-                clickSleepWait = 100;
+                clickSleepWait = 300;
             int.TryParse(text_ScrollSleepWait.Text, out int scrollSleepWait);
             if (scrollSleepWait == 0)
                 scrollSleepWait = 1500;
@@ -878,7 +925,7 @@ namespace AdeptiScanner_ZZZ
             int.TryParse(text_RecheckWait.Text, out int recheckWait);
             if (recheckWait == 0)
                 recheckWait = 300;
-            discAuto(false, clickSleepWait, scrollSleepWait, scrollTestWait, recheckWait);
+            discAuto(true, clickSleepWait, scrollSleepWait, scrollTestWait, recheckWait);
         }
 
         private void button_resume_Click(object sender, EventArgs e)
