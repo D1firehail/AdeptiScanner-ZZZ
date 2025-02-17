@@ -19,46 +19,6 @@ namespace AdeptiScanner_ZZZ
         public string GetPlainText() => Text;
     }
 
-    public readonly record struct PieceData(string Text, string StatKey) : IParsableData
-    {
-        public string GetPlainText() => Text;
-    }
-
-    public readonly record struct CharacterNameData(string Text, string Key) : IParsableData
-    {
-        public string GetPlainText() => Text;
-    }
-
-    public readonly record struct ArtifactLevelData(string Text, int Key) : IParsableData
-    {
-        public string GetPlainText() => Text;
-    }
-
-    public readonly record struct ArtifactMainStatData(string Text, string StatKey, double StatValue, int Level) : IParsableData
-    {
-        public string GetPlainText() => Text;
-    }
-
-    public readonly record struct ArtifactSubStatData(string Text, string StatKey, double StatValue) : IParsableData
-    {
-        public string GetPlainText() => Text;
-    }
-
-    public readonly record struct ArtifactSetData(string Text, string Key) : IParsableData
-    {
-        public string GetPlainText() => Text;
-    }
-
-    public readonly record struct WeaponNameData(string Text, string Key, int Rarity) : IParsableData
-    {
-        public string GetPlainText() => Text; // weapons currently only parse the GOOD name and assumes it's close enough to the english name
-    }
-
-    public readonly record struct WeaponLevelAndAscensionData(string BaseAtk, int Level, int Ascension) : IParsableData
-    {
-        public string GetPlainText() => BaseAtk;
-    }
-
     public readonly record struct DiscSetAndSlot(string Text, string Key, int Slot) : IParsableData
     {
         public string GetPlainText() => Text;
@@ -96,22 +56,12 @@ namespace AdeptiScanner_ZZZ
         public static string programVersion = "2.4.0";
         public static string dataVersion = "X.XX";
         //These get filled on startup by other file
-        public static List<PieceData> Pieces = new List<PieceData>();
-        public static List<CharacterNameData> Characters = new List<CharacterNameData>();
-        public static List<ArtifactLevelData> ArtifactLevels = new List<ArtifactLevelData>();
         public static Database[] rarityData = new Database[3];
-        public static List<WeaponNameData> WeaponNames = new List<WeaponNameData>();
-        public static Dictionary<WeaponNameData, List<WeaponLevelAndAscensionData>> WeaponLevels = new Dictionary<WeaponNameData, List<WeaponLevelAndAscensionData>>();
+       
 
         public static Dictionary<int, string> CharacterNames = new Dictionary<int, string>();
         public static Dictionary<string, string> SkillTypes = new Dictionary<string, string>();
-
-
-
-        public List<ArtifactMainStatData> MainStats = new List<ArtifactMainStatData>();
-        public List<ArtifactSubStatData> Substats = new List<ArtifactSubStatData>();
-        public List<ArtifactSetData> Sets = new List<ArtifactSetData>();
-
+        
         public static List<DiscSetAndSlot> DiscSets = new List<DiscSetAndSlot>();
         public static List<DiscLevelAndRarity> DiscLevels = new List<DiscLevelAndRarity>();
         public static Dictionary<int, List<DiscMainStat>> DiscMainStats = new();
@@ -362,27 +312,12 @@ namespace AdeptiScanner_ZZZ
 
         public static void SetCharacterName(string displayName, string GOODName)
         {
-            for (int i = 0; i < Characters.Count; i++)
-            {
-                if (Characters[i].Key == GOODName)
-                {
-                    Characters.RemoveAt(i);
-                    Characters.Insert(i, new CharacterNameData("Equipped: " + displayName, GOODName));
-                    break;
-                }
-            }
+            return;
         }
 
         public static bool discInvalid(Disc item)
         {
-            return true;
-        }
-
-        public static bool weaponInvalid(Weapon item)
-        {
-            return item.level == null || item.name == null || item.level.Value.Level > 90 
-                || (item.name.Value.Rarity < 3 && item.level.Value.Level > 70) 
-                || (item.name.Value.Rarity >= 3 && item.refinement == null);
+            return false;
         }
     }
 

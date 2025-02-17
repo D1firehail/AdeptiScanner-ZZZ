@@ -51,49 +51,40 @@ namespace AdeptiScanner_ZZZ
             return text;
         }
 
-        //public JObject toGOODArtifact(bool includeLocation = true)
-        //{
-        //    JObject result = new JObject();
+        public JObject toZOD(bool includeLocation = true)
+        {
+            JObject result = new JObject();
 
-        //    if (set != null)
-        //        result.Add("setKey", JToken.FromObject(set.Value.Key));
-        //    result.Add("rarity", JToken.FromObject(rarity));
-        //    if (main != null)
-        //        result.Add("level", JToken.FromObject(main.Value.Level));
-        //    if (piece != null)
-        //        result.Add("slotKey", JToken.FromObject(piece.Value.StatKey));
-        //    if (main != null)
-        //        result.Add("mainStatKey", JToken.FromObject(main.Value.StatKey));
-        //    if (subs != null)
-        //    {
-        //        JArray subsJArr = new JArray();
-        //        foreach (ArtifactSubStatData sub in subs)
-        //        {
-        //            JObject subJObj = new JObject();
-        //            subJObj.Add("key", JToken.FromObject(sub.StatKey));
-        //            subJObj.Add("value", JToken.FromObject(sub.StatValue));
-        //            subsJArr.Add(subJObj);
-        //        }
-        //        result.Add("substats", subsJArr);
-        //    }
-        //    if (includeLocation)
-        //    {
-        //        if (character != null)
-        //            result.Add("location", JToken.FromObject(character.Value.Key));
-        //        else
-        //            result.Add("location", JToken.FromObject(""));
-        //    }
-
-        //    result.Add("lock", JToken.FromObject(locked));
-
-        //    /*if (level != null && main != null && level.Item2 != main.Item4)
-        //    {
-        //        Console.WriteLine("Read level: " + level.Item2 + ", mainstat level: " + main.Item4);
-        //        Console.WriteLine(this.ToString());
-                
-        //    }*/
-        //    return result;
-        //}
+            if (slot != null)
+            {
+                result.Add("setKey", JToken.FromObject(slot.Value.Key));
+                result.Add("slotKey", JToken.FromObject(slot.Value.Slot));
+            }
+            if (level != null)
+            {
+                result.Add("level", JToken.FromObject(level.Value.Level));
+                result.Add("rarity", JToken.FromObject(level.Value.Tier));
+            }
+            if (main != null)
+            {
+                result.Add("mainStatKey", JToken.FromObject(main.Value.Key));
+            }
+            if (subs != null)
+            {
+                JArray subsJArr = new JArray();
+                foreach (DiscSubStat sub in subs)
+                {
+                    JObject subJObj = new JObject
+                    {
+                        { "key", JToken.FromObject(sub.Key) },
+                        { "upgrades", JToken.FromObject(sub.Upgrades) }
+                    };
+                    subsJArr.Add(subJObj);
+                }
+                result.Add("substats", subsJArr);
+            }
+            return result;
+        }
 
         //public static Artifact fromGOODArtifact(JObject GOODArtifact)
         //{
@@ -203,31 +194,27 @@ namespace AdeptiScanner_ZZZ
         //    }
         //}
 
-        //public static JObject listToGOODArtifacts(List<Artifact> items, int minLevel, int maxLevel, int minRarity, int maxRarity, bool exportAllEquipped, bool exportEquipStatus)
-        //{
-        //    JObject result = new JObject();
-        //    JArray artifactJArr = new JArray();
-        //    foreach (Artifact item in items)
-        //    {
-        //        bool add = false;
-        //        if (exportAllEquipped && item.character != null)
-        //        {
-        //            add = true;
-        //        }
+        public static JObject listToZOD(List<Disc> items, int minLevel, int maxLevel, int minRarity, int maxRarity)
+        {
+            JObject result = new JObject();
+            JArray discJArr = new JArray();
+            foreach (Disc item in items)
+            {
+                bool add = false;
 
-        //        if (item.level.HasValue && item.level.Value.Key >= minLevel && item.level.Value.Key <= maxLevel
-        //            && item.rarity >= minRarity && item.rarity <= maxRarity)
-        //        {
-        //            add = true;
-        //        }
+                if (item.level.HasValue && item.level.Value.Level >= minLevel && item.level.Value.Level <= maxLevel
+                    && (int)item.level.Value.Tier >= minRarity && (int)item.level.Value.Tier <= maxRarity)
+                {
+                    add = true;
+                }
 
-        //        if (add)
-        //        {
-        //            artifactJArr.Add(item.toGOODArtifact(exportEquipStatus));
-        //        }
-        //    }
-        //    result.Add("artifacts", artifactJArr);
-        //    return result;
-        //}
+                if (add)
+                {
+                    discJArr.Add(item.toZOD());
+                }
+            }
+            result.Add("discs", discJArr);
+            return result;
+        }
     }
 }

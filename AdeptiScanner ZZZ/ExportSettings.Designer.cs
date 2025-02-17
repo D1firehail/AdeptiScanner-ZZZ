@@ -113,7 +113,7 @@ namespace AdeptiScanner_ZZZ
             label_maxraritytext.Location = new System.Drawing.Point(4, 4);
             label_maxraritytext.Margin = new System.Windows.Forms.Padding(4);
             label_maxraritytext.Name = "label_maxraritytext";
-            label_maxraritytext.Size = new System.Drawing.Size(63, 15);
+            label_maxraritytext.Size = new System.Drawing.Size(62, 15);
             label_maxraritytext.TabIndex = 8;
             label_maxraritytext.Text = "Max rarity:";
             // 
@@ -147,7 +147,7 @@ namespace AdeptiScanner_ZZZ
             label_maxleveltext.Location = new System.Drawing.Point(4, 4);
             label_maxleveltext.Margin = new System.Windows.Forms.Padding(4);
             label_maxleveltext.Name = "label_maxleveltext";
-            label_maxleveltext.Size = new System.Drawing.Size(60, 15);
+            label_maxleveltext.Size = new System.Drawing.Size(59, 15);
             label_maxleveltext.TabIndex = 4;
             label_maxleveltext.Text = "Max level:";
             // 
@@ -179,7 +179,7 @@ namespace AdeptiScanner_ZZZ
             checkBox_exportEquipStatus.Location = new System.Drawing.Point(122, 36);
             checkBox_exportEquipStatus.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             checkBox_exportEquipStatus.Name = "checkBox_exportEquipStatus";
-            checkBox_exportEquipStatus.Size = new System.Drawing.Size(127, 19);
+            checkBox_exportEquipStatus.Size = new System.Drawing.Size(126, 19);
             checkBox_exportEquipStatus.TabIndex = 13;
             checkBox_exportEquipStatus.Text = "Export equip status";
             checkBox_exportEquipStatus.UseVisualStyleBackColor = true;
@@ -303,7 +303,7 @@ namespace AdeptiScanner_ZZZ
             tableLayoutPanel4.SetColumnSpan(dpiIgnoringSlider_minlevel, 3);
             dpiIgnoringSlider_minlevel.Dock = System.Windows.Forms.DockStyle.Fill;
             dpiIgnoringSlider_minlevel.Location = new System.Drawing.Point(104, 24);
-            dpiIgnoringSlider_minlevel.MaxValue = 20;
+            dpiIgnoringSlider_minlevel.MaxValue = 15;
             dpiIgnoringSlider_minlevel.MinValue = 0;
             dpiIgnoringSlider_minlevel.Name = "dpiIgnoringSlider_minlevel";
             dpiIgnoringSlider_minlevel.Size = new System.Drawing.Size(297, 47);
@@ -318,7 +318,7 @@ namespace AdeptiScanner_ZZZ
             tableLayoutPanel4.SetColumnSpan(dpiIgnoringSlider_maxlevel, 3);
             dpiIgnoringSlider_maxlevel.Dock = System.Windows.Forms.DockStyle.Fill;
             dpiIgnoringSlider_maxlevel.Location = new System.Drawing.Point(104, 77);
-            dpiIgnoringSlider_maxlevel.MaxValue = 20;
+            dpiIgnoringSlider_maxlevel.MaxValue = 15;
             dpiIgnoringSlider_maxlevel.MinValue = 0;
             dpiIgnoringSlider_maxlevel.Name = "dpiIgnoringSlider_maxlevel";
             dpiIgnoringSlider_maxlevel.Size = new System.Drawing.Size(297, 47);
@@ -332,7 +332,7 @@ namespace AdeptiScanner_ZZZ
             // 
             dpiIgnoringSlider_minrarity.Dock = System.Windows.Forms.DockStyle.Fill;
             dpiIgnoringSlider_minrarity.Location = new System.Drawing.Point(104, 130);
-            dpiIgnoringSlider_minrarity.MaxValue = 5;
+            dpiIgnoringSlider_minrarity.MaxValue = 2;
             dpiIgnoringSlider_minrarity.MinValue = 0;
             dpiIgnoringSlider_minrarity.Name = "dpiIgnoringSlider_minrarity";
             dpiIgnoringSlider_minrarity.Size = new System.Drawing.Size(95, 47);
@@ -346,7 +346,7 @@ namespace AdeptiScanner_ZZZ
             // 
             dpiIgnoringSlider_maxrarity.Dock = System.Windows.Forms.DockStyle.Fill;
             dpiIgnoringSlider_maxrarity.Location = new System.Drawing.Point(306, 130);
-            dpiIgnoringSlider_maxrarity.MaxValue = 5;
+            dpiIgnoringSlider_maxrarity.MaxValue = 2;
             dpiIgnoringSlider_maxrarity.MinValue = 0;
             dpiIgnoringSlider_maxrarity.Name = "dpiIgnoringSlider_maxrarity";
             dpiIgnoringSlider_maxrarity.Size = new System.Drawing.Size(95, 47);

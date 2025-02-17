@@ -26,8 +26,8 @@ namespace AdeptiScanner_ZZZ
         private Bitmap img_Raw;
         private Bitmap img_Filtered;
         private int[] filtered_rows;
-        private Rectangle savedArtifactArea = new Rectangle(0, 0, 1, 1);
-        private Rectangle relativeArtifactArea = new Rectangle(0, 0, 1, 1);
+        private Rectangle savedDiscArea = new Rectangle(0, 0, 1, 1);
+        private Rectangle relativeDiscArea = new Rectangle(0, 0, 1, 1);
         private Rectangle savedGameArea = new Rectangle(0, 0, 1, 1);
         private bool pauseAuto = true;
         private bool softCancelAuto = true;
@@ -38,9 +38,7 @@ namespace AdeptiScanner_ZZZ
 
         internal bool autoRunning = false;
         private bool autoCaptureDone = false;
-        internal List<Artifact> scannedArtifacts = new List<Artifact>();
         internal List<Disc> scannedDiscs = new List<Disc>();
-        internal List<Weapon> scannedWeapons = new List<Weapon>();
         internal List<Character> scannedCharacters = new List<Character>();
         private bool cancelOCRThreads = false;
         private const int ThreadCount = 6; //--------------------------------------------------------
@@ -325,34 +323,18 @@ namespace AdeptiScanner_ZZZ
                         //    img.Save(Path.Join(Database.appDir, "images", "GenshinArtifactImg_" + timestamp + ".png"));
                         Rectangle area = new Rectangle(0, 0, img.Width, img.Height);
                         Bitmap filtered = new Bitmap(img);
-                        if (weaponMode)
-                        {
-                            filtered = ImageProcessing.getWeaponImg(filtered, area, out int[] rows, saveImages, out bool locked, out Rectangle nameArea, out Rectangle statArea, out Rectangle refinementArea, out Rectangle charArea);
-                            Weapon weapon = ImageProcessing.getWeapon(filtered, rows, saveImages, threadEngines[threadIndex], locked, nameArea, statArea, refinementArea, charArea);
+                        
+                        filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, saveImages);
 
-                            if (Database.weaponInvalid(weapon))
-                            {
-                                badResults.Enqueue(img);
-                            }
-                            else
-                            {
-                                threadResults[threadIndex].Add(weapon);
-                            }
+                        Disc item = ImageProcessing.getDisc(filtered, rows, saveImages, threadEngines[threadIndex]);
+
+                        if (Database.discInvalid(item))
+                        {
+                            badResults.Enqueue(img);
                         }
                         else
                         {
-                            filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, saveImages);
-
-                            Disc item = ImageProcessing.getDisc(filtered, rows, saveImages, threadEngines[threadIndex]);
-
-                            if (Database.discInvalid(item))
-                            {
-                                badResults.Enqueue(img);
-                            }
-                            else
-                            {
-                                threadResults[threadIndex].Add(item);
-                            }
+                            threadResults[threadIndex].Add(item);
                         }
 
                     }
@@ -370,7 +352,7 @@ namespace AdeptiScanner_ZZZ
             }
         }
 
-        private void artifactAuto(bool saveImages, int clickSleepWait = 100, int scrollSleepWait = 1500, int scrollTestWait = 100, int recheckSleepWait = 300)
+        private void discAuto(bool saveImages, int clickSleepWait = 100, int scrollSleepWait = 1500, int scrollTestWait = 100, int recheckSleepWait = 300)
         {
             text_full.Text = "Starting auto-run. ---Press ESCAPE to pause---" + Environment.NewLine;
             autoRunning = true;
@@ -384,9 +366,9 @@ namespace AdeptiScanner_ZZZ
                 runOCRThread(i, false);
             }
 
-            Task.Run(ArtifactAutoInternal);
+            Task.Run(DiscAutoInternal);
 
-            void ArtifactAutoInternal()
+            void DiscAutoInternal()
             {
                 Stopwatch runtime = new Stopwatch();
                 runtime.Start();
@@ -396,9 +378,9 @@ namespace AdeptiScanner_ZZZ
                 int firstY = 0;
                 int firstRows = 0;
                 int nextThread = 0;
-                Rectangle gridArea = new Rectangle(savedGameArea.X, savedGameArea.Y, savedArtifactArea.X - savedGameArea.X, savedGameArea.Height);
+                Rectangle gridArea = new Rectangle(savedGameArea.X, savedGameArea.Y, savedDiscArea.X - savedGameArea.X, savedGameArea.Height);
                 Point gridOffset = new Point(gridArea.X, gridArea.Y);
-                List<string> foundArtifactHashes = new List<string>();
+                List<string> foundHashes = new List<string>();
 
 
                 GameVisibilityHandler.bringGameToFront();
@@ -528,7 +510,7 @@ namespace AdeptiScanner_ZZZ
                         clickPos(p.X, p.Y);
                         System.Threading.Thread.Sleep(clickSleepWait);
 
-                        Bitmap artifactSC = ImageProcessing.CaptureScreenshot(saveImages, savedArtifactArea, true);
+                        Bitmap artifactSC = ImageProcessing.CaptureScreenshot(saveImages, savedDiscArea, true);
 
                         //check if artifact already found using hash of pixels, without the right edge due to lock/unlock animation
                         Bitmap withoutLock = new Bitmap(artifactSC.Width * 3 / 4, artifactSC.Height);
@@ -545,7 +527,7 @@ namespace AdeptiScanner_ZZZ
                         //https://stackoverflow.com/a/800469 with some liberty
                         string hash = string.Concat(sha1.ComputeHash(imgBytes).Select(x => x.ToString("X2")));
 
-                        if (foundArtifactHashes.Contains(hash))
+                        if (foundHashes.Contains(hash))
                         {
                             if (repeat)
                             {
@@ -568,7 +550,7 @@ namespace AdeptiScanner_ZZZ
                             }
 
                         }
-                        foundArtifactHashes.Add(hash);
+                        foundHashes.Add(hash);
 
                         //queue up processing of artifact
                         threadQueues[nextThread].Enqueue(artifactSC);
@@ -603,20 +585,19 @@ namespace AdeptiScanner_ZZZ
                     }
                     foreach (object item in threadResults[i])
                     {
-                        if (item is Artifact arti)
+                        if (item is Disc disc)
                         {
-                            scannedArtifacts.Add(arti);
-                        }
-                        else if (item is Weapon wep)
+                            scannedDiscs.Add(disc);
+                        } else
                         {
-                            scannedWeapons.Add(wep);
+                            throw new NotImplementedException((item?.GetType()?.FullName ?? "NULL") + " Type Not supported");
                         }
                     }
                 }
 
 
                 AppendStatusText("Auto finished" + Environment.NewLine
-                    + " Good results: " + scannedArtifacts.Count + ", Bad results: " + badResults.Count + Environment.NewLine
+                    + " Good results: " + scannedDiscs.Count + ", Bad results: " + badResults.Count + Environment.NewLine
                     + "Time elapsed: " + runtime.ElapsedMilliseconds + "ms" + Environment.NewLine + Environment.NewLine, false);
 
                 while (badResults.TryDequeue(out Bitmap img))
@@ -641,276 +622,12 @@ namespace AdeptiScanner_ZZZ
             }
         }
 
-        private void weaponAuto(bool saveImages, int clickSleepWait = 100, int scrollSleepWait = 1500, int scrollTestWait = 100, int recheckSleepWait = 300)
-        {
-            text_full.Text = "Starting auto-run. ---Press ESCAPE to pause---" + Environment.NewLine;
-            autoRunning = true;
-            autoCaptureDone = false;
-            registerPauseKey(); //activate pause auto hotkey
-            //start worker threads
-            for (int i = 0; i < ThreadCount; i++)
-            {
-                threadQueues[i] = new ConcurrentQueue<Bitmap>();
-                threadResults[i] = new List<object>();
-                runOCRThread(i, true);
-            }
-
-            Task.Run(WeaponAutoInternal);
-
-            void WeaponAutoInternal()
-            {
-                Stopwatch runtime = new Stopwatch();
-                runtime.Start();
-                System.Security.Cryptography.SHA1 sha1 = System.Security.Cryptography.SHA1.Create();
-                bool running = true;
-                bool firstRun = true;
-                int firstY = 0;
-                int firstRows = 0;
-                int nextThread = 0;
-                Rectangle gridArea = new Rectangle(savedGameArea.X, savedGameArea.Y, savedArtifactArea.X - savedGameArea.X, savedGameArea.Height);
-                Point gridOffset = new Point(gridArea.X, gridArea.Y);
-                List<string> foundWeapon = new List<string>();
-
-
-                GameVisibilityHandler.bringGameToFront();
-
-                //make sure cursor is on the correct screen
-                System.Threading.Thread.Sleep(50);
-                System.Windows.Forms.Cursor.Position = new Point(savedGameArea.X, savedGameArea.Y);
-                System.Threading.Thread.Sleep(50);
-                System.Windows.Forms.Cursor.Position = new Point(savedGameArea.X, savedGameArea.Y);
-                System.Threading.Thread.Sleep(50);
-
-                while (running)
-                {
-                    //load current grid/scroll location
-                    Bitmap img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
-                    List<Point> weaponLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
-                    weaponLocations = ImageProcessing.equalizeGrid(weaponLocations, gridArea.Height / 20, gridArea.Width / 20);
-
-                    if (weaponLocations.Count == 0)
-                    {
-                        break;
-                    }
-                    int startTop = weaponLocations[0].Y;
-                    int startBot = startTop;
-                    int rows = 1;
-                    int distToScroll = 0;
-                    foreach (Point p in weaponLocations)
-                    {
-                        if (p.Y > startBot + 3)
-                        {
-                            startBot = p.Y;
-                            rows++;
-                        }
-                    }
-                    if (firstRun)
-                    {
-                        firstY = startTop;
-                        firstRows = rows;
-                    }
-
-                    if (rows >= 1)
-                    {
-                        distToScroll = (int)((startBot - (double)firstY) / rows * (rows + 1));
-                    }
-
-                    if (!firstRun)
-                    {
-                        while (pauseAuto)
-                        {
-                            if (hardCancelAuto)
-                            {
-                                goto hard_cancel_pos;
-                            }
-                            if (softCancelAuto)
-                            {
-                                running = false;
-                                pauseAuto = false;
-                                goto soft_cancel_pos;
-                            }
-                            System.Threading.Thread.Sleep(1000);
-                        }
-                        //test scroll distance
-                        sim.Mouse.VerticalScroll(-1);
-                        System.Threading.Thread.Sleep(scrollTestWait);
-                        sim.Mouse.VerticalScroll(-1);
-                        System.Threading.Thread.Sleep(scrollTestWait);
-                        img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
-                        weaponLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
-                        weaponLocations = ImageProcessing.equalizeGrid(weaponLocations, gridArea.Height / 20, gridArea.Width / 20);
-
-                        if (weaponLocations.Count == 0)
-                        {
-                            break;
-                        }
-                        int distPerScroll = (startTop - weaponLocations[0].Y) / 2;
-                        int scrollsNeeded = 0;
-                        if (distPerScroll > 0)
-                        {
-                            scrollsNeeded = distToScroll / distPerScroll;
-                        }
-
-                        if (scrollsNeeded <= 0 || distPerScroll == 0 || rows < Math.Max(firstRows - 1, 0))
-                        {
-                            running = false;
-                        }
-
-                        while (scrollsNeeded > 0)
-                        {
-                            sim.Mouse.VerticalScroll(-1);
-                            scrollsNeeded--;
-                        }
-                        System.Threading.Thread.Sleep(scrollSleepWait);
-                        img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
-                        weaponLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
-                        weaponLocations = ImageProcessing.equalizeGrid(weaponLocations, gridArea.Height / 20, gridArea.Width / 20);
-                    }
-
-
-                    firstRun = false;
-
-                    //select and OCR each artifact in list
-                    bool repeat = false;
-                    bool hasNonDupes = false;
-                    for (int i = 0; i < weaponLocations.Count;)
-                    {
-                        Point p = weaponLocations[i];
-                        while (pauseAuto)
-                        {
-                            if (hardCancelAuto)
-                            {
-                                goto hard_cancel_pos;
-                            }
-
-                            if (softCancelAuto)
-                            {
-                                running = false;
-                                pauseAuto = false;
-                                goto soft_cancel_pos;
-                            }
-                            System.Threading.Thread.Sleep(1000);
-                        }
-                        clickPos(p.X, p.Y);
-                        System.Threading.Thread.Sleep(clickSleepWait);
-
-                        Bitmap weaponSC = ImageProcessing.CaptureScreenshot(saveImages, savedArtifactArea, true);
-
-                        //check if weapon already found using hash of pixels, without the right edge due to lock/unlock animation
-                        Bitmap withoutLock = new Bitmap(weaponSC.Width * 3 / 4, weaponSC.Height);
-                        using (Graphics g = Graphics.FromImage(withoutLock))
-                        {
-                            g.DrawImage(weaponSC, 0, 0, new Rectangle(0, 0, weaponSC.Width * 3 / 4, weaponSC.Height), GraphicsUnit.Pixel);
-                        }
-                        BitmapData imgData = withoutLock.LockBits(new Rectangle(0, 0, withoutLock.Width, withoutLock.Height), ImageLockMode.ReadWrite, withoutLock.PixelFormat);
-                        int numBytes = Math.Abs(imgData.Stride) * imgData.Height;
-                        byte[] imgBytes = new byte[numBytes];
-                        Marshal.Copy(imgData.Scan0, imgBytes, 0, numBytes);
-                        //int PixelSize = 4; //ARGB, reverse order
-                        withoutLock.UnlockBits(imgData);
-                        //https://stackoverflow.com/a/800469 with some liberty
-                        string hash = string.Concat(sha1.ComputeHash(imgBytes).Select(x => x.ToString("X2")));
-
-                        if (foundWeapon.Contains(hash))
-                        {
-                            if (!repeat)
-                            {
-                                repeat = true;
-                                System.Threading.Thread.Sleep(recheckSleepWait);
-                                continue;
-                            }
-
-                        }
-                        else
-                        {
-                            hasNonDupes = true;
-                        }
-                        foundWeapon.Add(hash);
-
-                        //queue up processing of artifact
-                        threadQueues[nextThread].Enqueue(weaponSC);
-                        nextThread = (nextThread + 1) % ThreadCount;
-
-                        i++;
-                        repeat = false;
-                    }
-
-
-                    if (!hasNonDupes)
-                    {
-                        AppendStatusText("Screen has only duplicate weapons, stopping" + Environment.NewLine, false);
-                        running = false;
-                    }
-
-                }
-
-            soft_cancel_pos:
-
-                autoCaptureDone = true;
-
-                //temporarily disable "got focus" event, as that would trigger pause
-                Activated -= eventGotFocus;
-                GameVisibilityHandler.bringScannerToFront();
-                Activated += eventGotFocus;
-
-                AppendStatusText("Scanning complete, awaiting results" + Environment.NewLine
-                    + "Time elapsed: " + runtime.ElapsedMilliseconds + "ms" + Environment.NewLine, false);
-                for (int i = 0; i < ThreadCount; i++)
-                {
-                    while (threadRunning[i] || pauseAuto)
-                    {
-                        if (hardCancelAuto)
-                        {
-                            goto hard_cancel_pos;
-                        }
-                        System.Threading.Thread.Sleep(1000);
-                    }
-                    foreach (object item in threadResults[i])
-                    {
-                        if (item is Artifact arti)
-                        {
-                            scannedArtifacts.Add(arti);
-                        }
-                        else if (item is Weapon wep)
-                        {
-                            scannedWeapons.Add(wep);
-                        }
-                    }
-                }
-
-
-                AppendStatusText("Auto finished" + Environment.NewLine
-                    + " Good results: " + scannedWeapons.Count + ", Bad results: " + badResults.Count + Environment.NewLine
-                    + "Time elapsed: " + runtime.ElapsedMilliseconds + "ms" + Environment.NewLine + Environment.NewLine, false);
-
-                while (badResults.TryDequeue(out Bitmap img))
-                {
-                    Rectangle area = new Rectangle(0, 0, img.Width, img.Height);
-                    Bitmap filtered = new Bitmap(img);
-                    string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ssff");
-                    filtered.Save(Path.Join(Database.appDir, "images", "GenshinArtifactImg_" + timestamp + ".png"));
-                    filtered = ImageProcessing.getWeaponImg(filtered, area, out int[] rows, saveImages, out bool locked, out Rectangle nameArea, out Rectangle statArea, out Rectangle refinementArea, out Rectangle charArea);
-                    Weapon item = ImageProcessing.getWeapon(filtered, rows, saveImages, tessEngine, locked, nameArea, statArea, refinementArea, charArea);
-                    AppendStatusText(item.ToString() + Environment.NewLine, false);
-                }
-
-                AppendStatusText("All bad results displayed" + Environment.NewLine, false);
-
-            hard_cancel_pos:
-                unregisterPauseKey();
-                runtime.Stop();
-                GameVisibilityHandler.bringScannerToFront();
-                AppendStatusText("Time elapsed: " + runtime.ElapsedMilliseconds + "ms" + Environment.NewLine, true);
-                autoRunning = false;
-            }
-        }
-
         enum CaptureDebugMode
         {
             Off,
             FullScreen,
             GameWindow,
-            ArtifactArea
+            DiscArea
         };
 
         private void btn_capture_Click(object sender, EventArgs e)
@@ -923,7 +640,7 @@ namespace AdeptiScanner_ZZZ
             }
             resetTextBoxes();
 
-            //Nothing = Normal, LShift + LCtrl = Game, LShift = Artifact, LCtrl = FullScreen
+            //Nothing = Normal, LShift + LCtrl = Game, LShift = Disc, LCtrl = FullScreen
             CaptureDebugMode debugMode = CaptureDebugMode.Off;
             if (Keyboard.IsKeyDown(Key.LeftShift))
             {
@@ -933,7 +650,7 @@ namespace AdeptiScanner_ZZZ
                 }
                 else
                 {
-                    debugMode = CaptureDebugMode.ArtifactArea;
+                    debugMode = CaptureDebugMode.DiscArea;
                 }
             }
             else if (Keyboard.IsKeyDown(Key.LeftCtrl))
@@ -981,43 +698,43 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-            bool ArtifactAreaCaptured = tmpGameArea != null;
-            Rectangle? tmpArtifactArea = null;
-            if (debugMode == CaptureDebugMode.ArtifactArea)
+            bool DiscAreaCaptured = tmpGameArea != null;
+            Rectangle? tmpDiscArea = null;
+            if (debugMode == CaptureDebugMode.DiscArea)
             {
-                tmpArtifactArea = new Rectangle(0, 0, img_Raw.Width, img_Raw.Height);
+                tmpDiscArea = new Rectangle(0, 0, img_Raw.Width, img_Raw.Height);
             }
             else if (tmpGameArea != null)
             {
                 try
                 {
-                    tmpArtifactArea = ImageProcessing.findArtifactArea(img_Raw, tmpGameArea.Value);
-                    if (tmpArtifactArea.Value.Width == 0 || tmpArtifactArea.Value.Height == 0)
-                        throw new Exception("Detected artifact are has width or height 0");
+                    tmpDiscArea = ImageProcessing.findArtifactArea(img_Raw, tmpGameArea.Value);
+                    if (tmpDiscArea.Value.Width == 0 || tmpDiscArea.Value.Height == 0)
+                        throw new Exception("Detected disc are has width or height 0");
                 }
                 catch (Exception exc)
                 {
-                    MessageBox.Show("Failed to find Artifact Area" + Environment.NewLine +
+                    MessageBox.Show("Failed to find Disc Area" + Environment.NewLine +
                         "Please make sure you're following the instructions properly."
                         + Environment.NewLine + "If the problem persists, please contact scanner dev"
-                        + Environment.NewLine + Environment.NewLine + "---" + Environment.NewLine + Environment.NewLine + "Exact error message: " + Environment.NewLine + exc.ToString(), "Failed to find Artifact Area"
+                        + Environment.NewLine + Environment.NewLine + "---" + Environment.NewLine + Environment.NewLine + "Exact error message: " + Environment.NewLine + exc.ToString(), "Failed to find Disc Area"
                         , MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    ArtifactAreaCaptured = false;
+                    DiscAreaCaptured = false;
                 }
             }
 
-            if (ArtifactAreaCaptured)
+            if (DiscAreaCaptured)
             {
                 savedGameArea = tmpGameArea.Value;
-                savedArtifactArea = tmpArtifactArea.Value;
-                relativeArtifactArea = tmpArtifactArea.Value;
+                savedDiscArea = tmpDiscArea.Value;
+                relativeDiscArea = tmpDiscArea.Value;
                 if (directGameRect != Rectangle.Empty)
                 {
                     savedGameArea.X = savedGameArea.X + directGameRect.X;
                     savedGameArea.Y = savedGameArea.Y + directGameRect.Y;
 
-                    savedArtifactArea.X = savedArtifactArea.X + directGameRect.X;
-                    savedArtifactArea.Y = savedArtifactArea.Y + directGameRect.Y;
+                    savedDiscArea.X = savedDiscArea.X + directGameRect.X;
+                    savedDiscArea.Y = savedDiscArea.Y + directGameRect.Y;
                 }
                 btn_OCR.Enabled = true;
                 button_auto.Enabled = true;
@@ -1036,23 +753,23 @@ namespace AdeptiScanner_ZZZ
                     gameImg.Save(Path.Join(Database.appDir, "images", "GenshinGameArea_" + timestamp + ".png"));
                 }
 
-                if (ArtifactAreaCaptured)
+                if (DiscAreaCaptured)
                 {
-                    Bitmap artifactImg = new Bitmap(tmpArtifactArea.Value.Width, tmpArtifactArea.Value.Height);
+                    Bitmap artifactImg = new Bitmap(tmpDiscArea.Value.Width, tmpDiscArea.Value.Height);
                     using (Graphics g = Graphics.FromImage(artifactImg))
                     {
-                        g.DrawImage(img_Raw, 0, 0, tmpArtifactArea.Value, GraphicsUnit.Pixel);
+                        g.DrawImage(img_Raw, 0, 0, tmpDiscArea.Value, GraphicsUnit.Pixel);
                     }
                     artifactImg.Save(Path.Join(Database.appDir, "images", "GenshinArtifactArea_" + timestamp + ".png"));
                 }
             }
 
-            if (ArtifactAreaCaptured)
+            if (DiscAreaCaptured)
             {
-                image_preview.Image = new Bitmap(tmpArtifactArea.Value.Width, tmpArtifactArea.Value.Height);
+                image_preview.Image = new Bitmap(tmpDiscArea.Value.Width, tmpDiscArea.Value.Height);
                 using (Graphics g = Graphics.FromImage(image_preview.Image))
                 {
-                    g.DrawImage(img_Raw, 0, 0, tmpArtifactArea.Value, GraphicsUnit.Pixel);
+                    g.DrawImage(img_Raw, 0, 0, tmpDiscArea.Value, GraphicsUnit.Pixel);
                 }
             }
         }
@@ -1075,14 +792,14 @@ namespace AdeptiScanner_ZZZ
                 {
                     img_Raw = ImageProcessing.LoadScreenshot();
                     savedGameArea = new Rectangle(0, 0, img_Raw.Width, img_Raw.Height);
-                    savedArtifactArea = new Rectangle(0, 0, img_Raw.Width, img_Raw.Height);
-                    relativeArtifactArea = new Rectangle(0, 0, img_Raw.Width, img_Raw.Height);
+                    savedDiscArea = new Rectangle(0, 0, img_Raw.Width, img_Raw.Height);
+                    relativeDiscArea = new Rectangle(0, 0, img_Raw.Width, img_Raw.Height);
                 }
                 else
                 {
                     bool? alreadyFocused = GameVisibilityHandler.IsGameFocused();
                     GameVisibilityHandler.bringGameToFront();
-                    img_Raw = ImageProcessing.CaptureScreenshot(saveImages, savedArtifactArea, GameVisibilityHandler.enabled);
+                    img_Raw = ImageProcessing.CaptureScreenshot(saveImages, savedDiscArea, GameVisibilityHandler.enabled);
                     if (alreadyFocused == false)
                     {
                         // no need to force scanner into focus if game was already focused (possible if activation is via hotkey)
@@ -1095,7 +812,7 @@ namespace AdeptiScanner_ZZZ
 
             img_Filtered = new Bitmap(img_Raw);
 
-            Rectangle readArea = relativeArtifactArea;
+            Rectangle readArea = relativeDiscArea;
             if (GameVisibilityHandler.enabled)
             {
                 //using process handle features and the image is exactly the artifact area
@@ -1105,48 +822,25 @@ namespace AdeptiScanner_ZZZ
                 }
                 else
                 {
-                    readArea = relativeArtifactArea;
+                    readArea = relativeDiscArea;
                 }
             }
 
-            if (checkbox_weaponMode.Checked)
+            img_Filtered = ImageProcessing.getDiscImg(img_Filtered, readArea, out filtered_rows, saveImages);
+            Disc disc = ImageProcessing.getDisc(img_Filtered, filtered_rows, saveImages, tessEngine);
+            if (Database.discInvalid(disc))
             {
-
-                img_Filtered = ImageProcessing.getWeaponImg(img_Filtered, readArea, out filtered_rows, saveImages, out bool locked, out Rectangle nameArea, out Rectangle statArea, out Rectangle refinementArea, out Rectangle charArea);
-                Weapon weapon = ImageProcessing.getWeapon(img_Filtered, filtered_rows, saveImages, tessEngine, locked, nameArea, statArea, refinementArea, charArea);
-                if (Database.weaponInvalid(weapon))
-                {
-                    displayInventoryItem(weapon);
-                    text_full.AppendText(Environment.NewLine + "---This weapon is invalid---" + Environment.NewLine);
-                }
-                else
-                {
-                    scannedWeapons.Add(weapon);
-                    displayInventoryItem(weapon);
-                }
-                text_full.AppendText(Environment.NewLine + "Total stored weapons:" + scannedWeapons.Count + Environment.NewLine);
-
-                image_preview.Image = new Bitmap(img_Filtered);
+                displayInventoryItem(disc);
+                text_full.AppendText(Environment.NewLine + "---This disc is invalid---" + Environment.NewLine);
             }
             else
             {
-
-                img_Filtered = ImageProcessing.getDiscImg(img_Filtered, readArea, out filtered_rows, saveImages);
-                Disc disc = ImageProcessing.getDisc(img_Filtered, filtered_rows, saveImages, tessEngine);
-                if (Database.discInvalid(disc))
-                {
-                    displayInventoryItem(disc);
-                    text_full.AppendText(Environment.NewLine + "---This artifact is invalid---" + Environment.NewLine);
-                }
-                else
-                {
-                    scannedDiscs.Add(disc);
-                    displayInventoryItem(disc);
-                }
-                text_full.AppendText(Environment.NewLine + "Total stored artifacts:" + scannedArtifacts.Count + Environment.NewLine);
-
-                image_preview.Image = new Bitmap(img_Filtered);
+                scannedDiscs.Add(disc);
+                displayInventoryItem(disc);
             }
+            text_full.AppendText(Environment.NewLine + "Total stored discs:" + scannedDiscs.Count + Environment.NewLine);
+
+            image_preview.Image = new Bitmap(img_Filtered);
         }
 
         private void button_auto_Click(object sender, EventArgs e)
@@ -1184,14 +878,7 @@ namespace AdeptiScanner_ZZZ
             int.TryParse(text_RecheckWait.Text, out int recheckWait);
             if (recheckWait == 0)
                 recheckWait = 300;
-            if (checkbox_weaponMode.Checked)
-            {
-                weaponAuto(false, clickSleepWait, scrollSleepWait, scrollTestWait, recheckWait);
-            }
-            else
-            {
-                artifactAuto(false, clickSleepWait, scrollSleepWait, scrollTestWait, recheckWait);
-            }
+            discAuto(false, clickSleepWait, scrollSleepWait, scrollTestWait, recheckWait);
         }
 
         private void button_resume_Click(object sender, EventArgs e)
@@ -1223,23 +910,11 @@ namespace AdeptiScanner_ZZZ
             string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ssff");
 
             JObject currData = new JObject();
-            if (scannedArtifacts.Count > 0)
+            if (scannedDiscs.Count > 0)
             {
-                JObject artis = Artifact.listToGOODArtifacts(scannedArtifacts, minLevel, maxLevel, minRarity, maxRarity, exportAllEquipped, exportEquipStatus);
-                currData.Add("artifacts", artis["artifacts"]);
-            }
-
-            if (scannedWeapons.Count > 0)
-            {
-                JObject wepData = Weapon.listToGOODWeapons(scannedWeapons, exportEquipStatus);
-                currData.Add("weapons", wepData["weapons"]);
-            }
-
-            if (scannedCharacters.Count > 0)
-            {
-                JObject charData = Character.listToGOODCharacter(scannedCharacters);
-                currData.Add("characters", charData["characters"]);
-            }
+                JObject discs = Disc.listToZOD(scannedDiscs, minLevel, maxLevel, minRarity, maxRarity);
+                currData.Add("discs", discs["discs"]);
+            }           
 
 
             if (useTemplate && !File.Exists(Path.Join(Database.appDir, "ExportTemplate.json")))
@@ -1251,36 +926,23 @@ namespace AdeptiScanner_ZZZ
             if (useTemplate)
             {
                 JObject template = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(Path.Join(Database.appDir, "ExportTemplate.json")));
-                if (currData.ContainsKey("artifact"))
+                if (currData.ContainsKey("discs"))
                 {
-                    template.Remove("artifacts");
-                    template.Add("artifacts", currData["artifacts"]);
+                    template.Remove("discs");
+                    template.Add("discs", currData["discs"]);
                 }
-
-                if (currData.ContainsKey("weapons"))
-                {
-                    template.Remove("weapons");
-                    template.Add("weapons", currData["weapons"]);
-                }
-
-                if (currData.ContainsKey("characters"))
-                {
-                    template.Remove("characters");
-                    template.Add("characters", currData["characters"]);
-                }
-
 
                 currData = template;
             }
             else
             {
-                currData.Add("format", "GOOD");
+                currData.Add("format", "ZOD");
                 currData.Add("version", 1);
                 currData.Add("source", "AdeptiScanner");
                 //currData.Add("characters", new JArray());
                 //currData.Add("weapons", new JArray());
             }
-            string fileName = Path.Join(Database.appDir, @"Scan_Results", "export" + timestamp + ".GOOD.json");
+            string fileName = Path.Join(Database.appDir, @"Scan_Results", "export" + timestamp + ".ZOD.json");
             File.WriteAllText(fileName, currData.ToString());
             text_full.AppendText("Exported to \"" + fileName + "\"" + Environment.NewLine);
 
@@ -1453,7 +1115,7 @@ namespace AdeptiScanner_ZZZ
 
             int diff = scannedCharacters.Count - beforeCount;
 
-            enkaTab.UpdateMissingChars(scannedArtifacts, scannedWeapons, scannedCharacters);
+            enkaTab.UpdateMissingChars(scannedDiscs, scannedCharacters);
 
             AppendStatusText("New character info: " + diff + " added, " + (characterList.Count - diff) + " updated, " + scannedCharacters.Count + " total" + Environment.NewLine, false);
         }
@@ -1696,22 +1358,22 @@ namespace AdeptiScanner_ZZZ
                     {
                         try
                         {
-                            int startArtiAmount = scannedArtifacts.Count();
+                            int startDiscAmount = scannedDiscs.Count();
                             JObject GOODjson = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(file));
-                            if (GOODjson.ContainsKey("artifacts"))
+                            if (GOODjson.ContainsKey("discs"))
                             {
-                                JArray artifacts = GOODjson["artifacts"].ToObject<JArray>();
-                                foreach (JObject artifact in artifacts)
+                                JArray discs = GOODjson["discs"].ToObject<JArray>();
+                                foreach (JObject disc in discs)
                                 {
-                                    Artifact importedArtifact = Artifact.fromGOODArtifact(artifact);
-                                    if (importedArtifact != null)
+                                    Disc importedDisc = null;
+                                    if (importedDisc != null)
                                     {
-                                        scannedArtifacts.Add(importedArtifact);
+                                        scannedDiscs.Add(importedDisc);
                                     }
                                 }
                             }
-                            int endArtiAmount = scannedArtifacts.Count();
-                            text_full.AppendText("Imported " + (endArtiAmount - startArtiAmount) + " aritfacts (new total " + endArtiAmount + ") from file: " + file + Environment.NewLine);
+                            int endDiscAmount = scannedDiscs.Count();
+                            text_full.AppendText("Imported " + (endDiscAmount - startDiscAmount) + " discs (new total " + endDiscAmount + ") from file: " + file + Environment.NewLine);
                             break;
                         }
                         catch (Exception exc)

@@ -48,38 +48,9 @@ namespace AdeptiScanner_ZZZ
             EnkaApi.RequestUid(uid);
         }
 
-        public void UpdateMissingChars(List<Artifact> artifacts, List<Weapon> weapons, List<Character> characters) 
+        public void UpdateMissingChars(List<Disc> discs, List<Character> characters) 
         {
-            List<CharacterNameData> names = new List<CharacterNameData>();
-            foreach (Artifact arti in artifacts)
-            {
-                if (arti.character != null && !names.Any(name => name.Key.Equals(arti.character.Value.Key)))
-                {
-                    //if name is non-null and not already added, add it!
-                    names.Add(arti.character.Value);
-                }
-            }
-
-            foreach (Weapon wep in weapons) 
-            {
-
-                if (wep.character != null && !names.Any(name => name.Key.Equals(wep.character.Value.Key)))
-                {
-                    //if name is non-null and not already added, add it!
-                    names.Add(wep.character.Value);
-                }
-            }
-
-            //filter out names that are already fetched
-            List<CharacterNameData> unfetchedNames = names.Where(name => !characters.Any(c => c.key.Equals(name.Key))).ToList();
-            unfetchedNames.Sort((a, b) => a.Key.CompareTo(b.Key));
-            string missingChars = string.Empty;
-            foreach (CharacterNameData name in unfetchedNames)
-            {
-                missingChars += name.Text.Replace("Equipped: ", "") + Environment.NewLine;
-            }
-
-            text_remainingCharacters.Text = missingChars;
+            
         }
     }
 }

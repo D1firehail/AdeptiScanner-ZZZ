@@ -21,11 +21,11 @@ namespace AdeptiScanner_ZZZ
                 dpiIgnoringSlider_minlevel.Value = ScannerForm.INSTANCE.minLevel;
                 label_minlevelnumber.Text = "" + dpiIgnoringSlider_minlevel.Value;
                 dpiIgnoringSlider_maxlevel.Value = ScannerForm.INSTANCE.maxLevel;
-                label_maxlevelnumber.Text = "" + dpiIgnoringSlider_maxlevel.Value;
+                label_maxlevelnumber.Text = "" +dpiIgnoringSlider_maxlevel.Value;
                 dpiIgnoringSlider_minrarity.Value = ScannerForm.INSTANCE.minRarity;
-                label_minraritynumber.Text = "" + dpiIgnoringSlider_minrarity.Value;
+                label_minraritynumber.Text = "" + ((Rarity)dpiIgnoringSlider_minrarity.Value).ToString();
                 dpiIgnoringSlider_maxrarity.Value = ScannerForm.INSTANCE.maxRarity;
-                label_maxraritynumber.Text = "" + dpiIgnoringSlider_maxrarity.Value;
+                label_maxraritynumber.Text = "" + ((Rarity)dpiIgnoringSlider_maxrarity.Value).ToString();
                 checkBox_exportEquipped.Checked = ScannerForm.INSTANCE.exportAllEquipped;
                 checkbox_exportTemplate.Checked = ScannerForm.INSTANCE.useTemplate;
                 checkBox_exportEquipStatus.Checked = ScannerForm.INSTANCE.exportEquipStatus;
@@ -52,7 +52,7 @@ namespace AdeptiScanner_ZZZ
 
         private void dpiIgnoringSlider_minrarity_Scroll(object sender, EventArgs e)
         {
-            label_minraritynumber.Text = "" + dpiIgnoringSlider_minrarity.Value;
+            label_minraritynumber.Text = "" + ((Rarity)dpiIgnoringSlider_minrarity.Value).ToString();
             if (ScannerForm.INSTANCE != null)
             {
                 ScannerForm.INSTANCE.minRarity = dpiIgnoringSlider_minrarity.Value;
@@ -61,7 +61,7 @@ namespace AdeptiScanner_ZZZ
 
         private void dpiIgnoringSlider_maxrarity_Scroll(object sender, EventArgs e)
         {
-            label_maxraritynumber.Text = "" + dpiIgnoringSlider_maxrarity.Value;
+            label_maxraritynumber.Text = "" + ((Rarity)dpiIgnoringSlider_maxrarity.Value).ToString();
             if (ScannerForm.INSTANCE != null)
             {
                 ScannerForm.INSTANCE.maxRarity = dpiIgnoringSlider_maxrarity.Value;
@@ -78,13 +78,12 @@ namespace AdeptiScanner_ZZZ
                     return;
                 }
 
-                DialogResult dialogResult = MessageBox.Show("This will clear " + ScannerForm.INSTANCE.scannedArtifacts.Count + " artifacts and " + ScannerForm.INSTANCE.scannedWeapons.Count + " weapons from the results." + Environment.NewLine + "Are you sure?", "Clear Results", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                DialogResult dialogResult = MessageBox.Show("This will clear " + ScannerForm.INSTANCE.scannedDiscs.Count + " discs from the results." + Environment.NewLine + "Are you sure?", "Clear Results", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                 if (dialogResult == DialogResult.Yes)
                 {
-                    ScannerForm.INSTANCE.AppendStatusText("Cleared " + ScannerForm.INSTANCE.scannedArtifacts.Count + " artifacts and " + ScannerForm.INSTANCE.scannedWeapons.Count + " from results" + Environment.NewLine, false);
-                    ScannerForm.INSTANCE.scannedArtifacts.Clear();
-                    ScannerForm.INSTANCE.scannedWeapons.Clear();
+                    ScannerForm.INSTANCE.AppendStatusText("Cleared " + ScannerForm.INSTANCE.scannedDiscs.Count + " discs from results" + Environment.NewLine, false);
+                    ScannerForm.INSTANCE.scannedDiscs.Clear();
                 }
             }
         }
