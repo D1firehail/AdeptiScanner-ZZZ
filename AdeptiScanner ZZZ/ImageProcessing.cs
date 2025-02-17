@@ -296,7 +296,7 @@ namespace AdeptiScanner_ZZZ
             {
                 int x = (i / PixelSize) % gameAreaWidth;
                 var pixel = imgBytes.AsSpan(i, 4);
-                if (PixelIsColor(pixel, GameColor.PerfectBlack) || PixelIsColor(pixel, GameColor.PerfectWhite)) //look for artifact name background colour
+                if (PixelIsColor(pixel, GameColor.PerfectBlack) || PixelIsColor(pixel, GameColor.VeryWhite)) //look for artifact name background colour
                 {
                     cols[x]++;
                 }
@@ -589,7 +589,7 @@ namespace AdeptiScanner_ZZZ
                 int x = (i / PixelSize) % width;
                 int y = (i / PixelSize - x) / width;
                 var pixel = imgBytes.AsSpan(i, 4);
-                if (PixelIsColor(pixel, GameColor.PerfectWhite)) // Make the white text black and everything else white
+                if (PixelIsColor(pixel, GameColor.VeryWhite)) // Make the white text black and everything else white
                 {
                     rows[y]++;
                     imgBytes[i] = 0;
@@ -1036,7 +1036,7 @@ namespace AdeptiScanner_ZZZ
             LockRed, // lock icon
 
             PerfectBlack, // Disc card background
-            PerfectWhite, // Disc card background
+            VeryWhite, // Disc card text
         }
 
         /// <summary>
@@ -1082,8 +1082,8 @@ namespace AdeptiScanner_ZZZ
 
                 case GameColor.PerfectBlack:
                     return pixel[0] == 0&& pixel[1] == 0 && pixel[2] == 0;
-                case GameColor.PerfectWhite:
-                    return pixel[0] == 255 && pixel[1] == 255 && pixel[2] == 255;
+                case GameColor.VeryWhite:
+                    return pixel[0] == pixel[1] && pixel[1] == pixel[2] && pixel[2] > 245;
             }
             
             throw new NotImplementedException("No filter defined for GameColor " + color);

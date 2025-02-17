@@ -266,17 +266,17 @@ namespace AdeptiScanner_ZZZ
 
             for (int i = 0; i <= 9; i++)
             {
-                Database.DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/09", i, Rarity.B));
+                DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/09", i, Rarity.B));
             }
 
             for (int i = 0; i <= 12; i++)
             {
-                Database.DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/12", i, Rarity.A));
+                DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/12", i, Rarity.A));
             }
 
             for (int i = 0; i <= 15; i++)
             {
-                Database.DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/15", i, Rarity.S));
+                DiscLevels.Add(new DiscLevelAndRarity("Lv. " + i.ToString("00") + "/15", i, Rarity.S));
             }
 
             //Main stat filter
