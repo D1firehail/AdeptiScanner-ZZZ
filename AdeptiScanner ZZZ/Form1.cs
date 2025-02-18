@@ -873,7 +873,7 @@ namespace AdeptiScanner_ZZZ
             int.TryParse(text_RecheckWait.Text, out int recheckWait);
             if (recheckWait == 0)
                 recheckWait = 300;
-            discAuto(true, clickSleepWait, scrollSleepWait, scrollTestWait, recheckWait);
+            discAuto(false, clickSleepWait, scrollSleepWait, scrollTestWait, recheckWait);
         }
 
         private void button_resume_Click(object sender, EventArgs e)

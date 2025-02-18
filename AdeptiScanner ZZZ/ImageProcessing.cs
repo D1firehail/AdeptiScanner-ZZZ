@@ -384,27 +384,32 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-            verticalBlackStreak = 0;
-            int height = gameArea.Height - 1;
-            for (int y = height; y > top; y--)
+            int verticalGrayStreak = 0;
+            int bestGrayStreak = 0;
+            int bottom = top;
+
+            // find bottom by looking for the longest streak of any form of gray (or black or white) starting from top
+            for (int y = top; y < gameAreaHeight; y++)
             {
                 int i = (y * gameArea.Width + leftmost + 1) * PixelSize;
                 var pixel = imgBytes.AsSpan(i, 4);
-                if (PixelIsColor(pixel, GameColor.PerfectBlack)) //look for white-ish text background
-                {
-                    verticalBlackStreak++;
 
-                    if (verticalBlackStreak > 10)
+                if (PixelIsColor(pixel, GameColor.AnyGray))
+                {
+                    verticalGrayStreak++;
+                    if (verticalGrayStreak > bestGrayStreak)
                     {
-                        height = y + verticalBlackStreak - top;
-                        break;
+                        bestGrayStreak = verticalGrayStreak;
+                        bottom = y;
                     }
-                }
+                } 
                 else
                 {
-                    verticalBlackStreak = 0;
+                    verticalGrayStreak = 0;
                 }
             }
+
+            int height = bottom - top;
 
             return new Rectangle(gameArea.Left + leftmost, gameArea.Top + top, rightmost - leftmost, height);
         }
@@ -981,6 +986,7 @@ namespace AdeptiScanner_ZZZ
 
             PerfectBlack, // Disc card background
             VeryWhite, // Disc card text
+            AnyGray, // Any form of black/white/gray
 
             ArtifactLabelB, // B rarity item label in grid
             ArtifactLabelA, // A rarity item label in grid
@@ -1032,6 +1038,8 @@ namespace AdeptiScanner_ZZZ
                     return pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0;
                 case GameColor.VeryWhite:
                     return pixel[0] == pixel[1] && pixel[1] == pixel[2] && pixel[2] > 245;
+                case GameColor.AnyGray:
+                    return pixel[0] == pixel[1] && pixel[1] == pixel[2];
 
 
                 case GameColor.ArtifactLabelB:
