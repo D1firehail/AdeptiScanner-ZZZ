@@ -375,8 +375,6 @@ namespace AdeptiScanner_ZZZ
                 System.Security.Cryptography.SHA1 sha1 = System.Security.Cryptography.SHA1.Create();
                 bool running = true;
                 bool firstRun = true;
-                int firstY = 0;
-                int firstRows = 0;
                 int nextThread = 0;
                 Rectangle gridArea = new Rectangle(savedGameArea.X, savedGameArea.Y, savedDiscArea.X - savedGameArea.X, savedGameArea.Height);
                 Point gridOffset = new Point(gridArea.X, gridArea.Y);
@@ -398,33 +396,11 @@ namespace AdeptiScanner_ZZZ
                     //load current grid/scroll location
                     Bitmap img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
                     List<Point> artifactLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
-                    artifactLocations = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20);
+                    artifactLocations = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20, out int rows);
 
                     if (artifactLocations.Count == 0)
                     {
                         break;
-                    }
-                    int startTop = artifactLocations[0].Y;
-                    int startBot = startTop;
-                    int rows = 1;
-                    int distToScroll = 0;
-                    foreach (Point p in artifactLocations)
-                    {
-                        if (p.Y > startBot + 3)
-                        {
-                            startBot = p.Y;
-                            rows++;
-                        }
-                    }
-                    if (firstRun)
-                    {
-                        firstY = startTop;
-                        firstRows = rows;
-                    }
-
-                    if (rows >= 1)
-                    {
-                        distToScroll = (int)((startBot - (double)firstY) / rows * (rows + 1));
                     }
 
                     if (!firstRun)
@@ -443,46 +419,18 @@ namespace AdeptiScanner_ZZZ
                             }
                             System.Threading.Thread.Sleep(1000);
                         }
-                        //test scroll distance
-                        sim.Mouse.VerticalScroll(-1);
-                        System.Threading.Thread.Sleep(scrollTestWait);
-                        sim.Mouse.VerticalScroll(-1);
-                        System.Threading.Thread.Sleep(scrollTestWait);
-                        img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
-                        artifactLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
-                        artifactLocations = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20);
 
-                        if (artifactLocations.Count == 0)
+                        // each scroll moves a full row, so scroll as many times as there are rows
+                        for(int i = 0; i < rows; i++)
                         {
-                            break;
-                        }
-                        int distPerScroll = (startTop - artifactLocations[0].Y) / 2;
-                        int scrollsNeeded = 0;
-                        if (distPerScroll > 0)
-                        {
-                            scrollsNeeded = distToScroll / distPerScroll;
-                        }
-
-                        if (scrollsNeeded <= 0 || distPerScroll == 0 || rows < Math.Max(firstRows - 1, 0))
-                        {
-                            running = false;
-                        }
-                        /*Console.WriteLine("firstY " + firstY + Environment.NewLine
-                            + "startTop " + startTop + Environment.NewLine
-                            + "currTop " + weaponLocations[0].Y + Environment.NewLine
-                            + "distPerScroll " + distPerScroll + Environment.NewLine
-                            + "distToScroll " + distToScroll + Environment.NewLine
-                            + "scrollsNeeded " + scrollsNeeded + Environment.NewLine + Environment.NewLine); */
-
-                        while (scrollsNeeded > 0)
-                        {
+                            System.Threading.Thread.Sleep(scrollTestWait);
                             sim.Mouse.VerticalScroll(-1);
-                            scrollsNeeded--;
                         }
+                        
                         System.Threading.Thread.Sleep(scrollSleepWait);
                         img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
                         artifactLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
-                        artifactLocations = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20);
+                        artifactLocations = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20, out rows);
                     }
 
 
