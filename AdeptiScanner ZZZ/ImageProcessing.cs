@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -814,7 +815,7 @@ namespace AdeptiScanner_ZZZ
 
             //Do OCR and append to prevRaw
             string text = prevRaw;
-            using (var page = tessEngine.Process(scanArea, PageSegMode.SparseText))
+            using (var page = tessEngine.Process(scanArea, PageSegMode.SingleBlock))
             {
                 using (var iterator = page.GetIterator())
                 {
@@ -830,7 +831,7 @@ namespace AdeptiScanner_ZZZ
             rawText = text;
 
             string bestMatch = Database.FindClosestMatch(text, validText, out result, out dist);
-            //Console.WriteLine("\nGot (" + dist + ") \"" + bestMatch + "\" from \"" + text + "\"");
+            //Debug.WriteLine("Got (" + dist + ") \"" + bestMatch + "\" from \"" + text + "\"");
 
             return bestMatch;
         }
@@ -904,7 +905,14 @@ namespace AdeptiScanner_ZZZ
             using Bitmap narrowImage = new Bitmap(img);
             using (Graphics g = Graphics.FromImage(narrowImage))
             {
-                g.FillRectangle(Brushes.White, new Rectangle((int)(width * 0.75), 0, height, width));
+                g.FillRectangle(Brushes.White, new Rectangle((int)(width * 0.75), 0, width, height));
+            }
+
+            // cut out the numbers from image for use with main stat.
+            using Bitmap narrowImageEnd = new Bitmap(img);
+            using (Graphics g = Graphics.FromImage(narrowImageEnd))
+            {
+                g.FillRectangle(Brushes.White, new Rectangle(0, 0, (int)(width * 0.75), height));
             }
 
 
@@ -925,7 +933,12 @@ namespace AdeptiScanner_ZZZ
             int substat = 0;
             for (; i < textRows.Count; i++)
             {
-                string result = OCRRow(img, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity].DiscSubStats, out DiscSubStat? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
+                _ = OCRRow(narrowImage, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity].DiscSubStats, out _, out _, out string rawText1, "", saveImages, tessEngine);
+
+                tessEngine.SetVariable("tessedit_char_whitelist", @"9876543210.%");
+                string result = OCRRow(narrowImageEnd, textRows[i].Item1, textRows[i].Item2, Database.rarityData[rarity].DiscSubStats, out DiscSubStat? bestMatch, out int dist, out string rawText, rawText1, saveImages, tessEngine);
+                tessEngine.SetVariable("tessedit_char_whitelist", @"");
+
                 if (bestMatch.HasValue && dist < 3)
                 {
                     disc.subs.Add(bestMatch.Value);
