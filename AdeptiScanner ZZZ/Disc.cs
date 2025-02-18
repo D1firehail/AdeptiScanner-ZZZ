@@ -63,7 +63,7 @@ namespace AdeptiScanner_ZZZ
             if (level != null)
             {
                 result.Add("level", JToken.FromObject(level.Value.Level));
-                result.Add("rarity", JToken.FromObject(level.Value.Tier));
+                result.Add("rarity", JToken.FromObject(level.Value.Tier.ToString()));
             }
             if (main != null)
             {
