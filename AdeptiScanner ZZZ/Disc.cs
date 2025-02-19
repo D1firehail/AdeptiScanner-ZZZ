@@ -58,7 +58,7 @@ namespace AdeptiScanner_ZZZ
             if (slot != null)
             {
                 result.Add("setKey", JToken.FromObject(slot.Value.Key));
-                result.Add("slotKey", JToken.FromObject(slot.Value.Slot));
+                result.Add("slotKey", JToken.FromObject(slot.Value.Slot.ToString()));
             }
             if (level != null)
             {
