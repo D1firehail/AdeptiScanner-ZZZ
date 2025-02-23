@@ -50,9 +50,9 @@ namespace AdeptiScanner_ZZZ
         private bool rememberSettings = true;
 
         internal int minLevel = 0;
-        internal int maxLevel = 20;
-        internal int minRarity = 5;
-        internal int maxRarity = 5;
+        internal int maxLevel = 15;
+        internal int minRarity = 2;
+        internal int maxRarity = 2;
         internal bool exportAllEquipped = true;
         internal bool useTemplate = false;
         internal string travelerName = "";
@@ -323,7 +323,7 @@ namespace AdeptiScanner_ZZZ
                         //    img.Save(Path.Join(Database.appDir, "images", "GenshinArtifactImg_" + timestamp + ".png"));
                         Rectangle area = new Rectangle(0, 0, img.Width, img.Height);
                         Bitmap filtered = new Bitmap(img);
-                        
+
                         filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, saveImages);
 
                         Disc item = ImageProcessing.getDisc(filtered, rows, saveImages, threadEngines[threadIndex]);
@@ -421,12 +421,12 @@ namespace AdeptiScanner_ZZZ
                         }
 
                         // each scroll moves a full row, so scroll as many times as there are rows
-                        for(int i = 0; i < rows; i++)
+                        for (int i = 0; i < rows; i++)
                         {
                             System.Threading.Thread.Sleep(scrollTestWait);
                             sim.Mouse.VerticalScroll(-1);
                         }
-                        
+
                         System.Threading.Thread.Sleep(scrollSleepWait);
                         img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
                         artifactLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
@@ -439,7 +439,7 @@ namespace AdeptiScanner_ZZZ
                     if (!running && lastScrollLastRowHashes.Count > 0)
                     {
                         var finalHash = lastScrollLastRowHashes.Last().Hash;
-                        while(lastScrollLastRowHashes.Count > 1 && lastScrollLastRowHashes[^2].Hash == finalHash)
+                        while (lastScrollLastRowHashes.Count > 1 && lastScrollLastRowHashes[^2].Hash == finalHash)
                         {
                             lastScrollLastRowHashes.RemoveAt(lastScrollLastRowHashes.Count - 1);
                         }
@@ -545,7 +545,7 @@ namespace AdeptiScanner_ZZZ
                         }
 
                         if (!isLastRow || !running)
-                        { 
+                        {
                             foreach (var tup in thisRowHashes)
                             {
                                 //queue up processing of artifact
@@ -583,7 +583,8 @@ namespace AdeptiScanner_ZZZ
                         if (item is Disc disc)
                         {
                             scannedDiscs.Add(disc);
-                        } else
+                        }
+                        else
                         {
                             throw new NotImplementedException((item?.GetType()?.FullName ?? "NULL") + " Type Not supported");
                         }
@@ -909,7 +910,7 @@ namespace AdeptiScanner_ZZZ
             {
                 JObject discs = Disc.listToZOD(scannedDiscs, minLevel, maxLevel, minRarity, maxRarity);
                 currData.Add("discs", discs["discs"]);
-            }           
+            }
 
 
             if (useTemplate && !File.Exists(Path.Join(Database.appDir, "ExportTemplate.json")))
