@@ -981,19 +981,19 @@ namespace AdeptiScanner_ZZZ
             }
             if (settings.ContainsKey("FilterMinLevel"))
             {
-                minLevel = settings["FilterMinLevel"].ToObject<int>();
+                minLevel = Math.Clamp(settings["FilterMinLevel"].ToObject<int>(), 0, 15);
             }
             if (settings.ContainsKey("FilterMaxLevel"))
             {
-                maxLevel = settings["FilterMaxLevel"].ToObject<int>();
+                maxLevel = Math.Clamp(settings["FilterMaxLevel"].ToObject<int>(), 0, 15);
             }
             if (settings.ContainsKey("FilterMinRarity"))
             {
-                minRarity = settings["FilterMinRarity"].ToObject<int>();
+                minRarity = Math.Clamp(settings["FilterMinRarity"].ToObject<int>(), 0, 2);
             }
             if (settings.ContainsKey("FilterMaxRarity"))
             {
-                maxRarity = settings["FilterMaxRarity"].ToObject<int>();
+                maxRarity = Math.Clamp(settings["FilterMaxRarity"].ToObject<int>(), 0, 2);
             }
             if (settings.ContainsKey("ExportUseTemplate"))
             {
