@@ -386,9 +386,9 @@ namespace AdeptiScanner_ZZZ
 
             int verticalGrayStreak = 0;
             int bestGrayStreak = 0;
-            int bottom = top;
+            int prelimBottom = top;
 
-            // find bottom by looking for the longest streak of any form of gray (or black or white) starting from top
+            // find preliminary bottom by looking for the longest streak of any form of gray (or black or white) starting from top
             for (int y = top; y < gameAreaHeight; y++)
             {
                 int i = (y * gameArea.Width + leftmost + 1) * PixelSize;
@@ -400,12 +400,36 @@ namespace AdeptiScanner_ZZZ
                     if (verticalGrayStreak > bestGrayStreak)
                     {
                         bestGrayStreak = verticalGrayStreak;
-                        bottom = y;
+                        prelimBottom = y;
                     }
                 } 
                 else
                 {
                     verticalGrayStreak = 0;
+                }
+            }
+
+            // then, improve the guess by taking the lowest white above the preliminary bottom
+            // if this is note done, the capture will likely include some barely-transparent areas and screw up image hash for auto
+            int bottom = prelimBottom;
+            for (int y = prelimBottom; y > top; y--)
+            {
+                var found = false;
+                for (int x = leftmost; x < rightmost; x++)
+                {
+                    int i = (y * gameArea.Width + x) * PixelSize;
+                    var pixel = imgBytes.AsSpan(i, 4);
+
+                    if (PixelIsColor(pixel, GameColor.VeryWhite))
+                    {
+                        bottom = y;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found)
+                {
+                    break;
                 }
             }
 
@@ -606,6 +630,50 @@ namespace AdeptiScanner_ZZZ
             }
             int width = areaImg.Width;
             int height = areaImg.Height;
+
+            bool fullBlackRow = false;
+            bool hasSeenWhite = false;
+            bool hasSeenAllBlackAfterWhite = false;
+
+            bool SlopedColorThreshold(int pX, int pY, Span<byte> pixel)
+            {
+                bool pixelIsWhite = PixelIsColor(pixel, GameColor.VeryWhite);
+
+                if (!hasSeenWhite)
+                {
+                    hasSeenWhite = pixelIsWhite;
+                }
+                else if (!hasSeenAllBlackAfterWhite)
+                {
+                    // if we've seen any white, but no fully black line yet
+                    // apply a diagonal line to cut out the image for the disc itself
+                    // this allows looser white color threshold without the disc image adding noise
+                    var pixelIsBlack = PixelIsColor(pixel, GameColor.PerfectBlack);
+                    if (pX < width * 0.01)
+                    {
+                        fullBlackRow = pixelIsBlack;
+                    }
+                    else
+                    {
+                        fullBlackRow &= pixelIsBlack;
+                    }
+
+                    if (pX > width * 0.99 && fullBlackRow)
+                    {
+                        hasSeenAllBlackAfterWhite = true;
+                    }
+
+                    var discBorderLine = width * 0.7 - 0.5 * pY;
+
+                    if (pX > discBorderLine)
+                    {
+                        return false;
+                    }
+                }
+
+                return pixelIsWhite;
+            }
+
             //Prepare bytewise image processing
             BitmapData imgData = areaImg.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadWrite, areaImg.PixelFormat);
             int numBytes = Math.Abs(imgData.Stride) * imgData.Height;
@@ -617,7 +685,7 @@ namespace AdeptiScanner_ZZZ
                 int x = (i / PixelSize) % width;
                 int y = (i / PixelSize - x) / width;
                 var pixel = imgBytes.AsSpan(i, 4);
-                if (PixelIsColor(pixel, GameColor.VeryWhite)) // Make the white text black and everything else white
+                if (SlopedColorThreshold(x, y, pixel)) // Make the white text black and everything else white
                 {
                     rows[y]++;
                     imgBytes[i] = 0;
@@ -1037,7 +1105,7 @@ namespace AdeptiScanner_ZZZ
                 case GameColor.PerfectBlack:
                     return pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0;
                 case GameColor.VeryWhite:
-                    return pixel[0] == pixel[1] && pixel[1] == pixel[2] && pixel[2] > 245;
+                    return pixel[0] == pixel[1] && pixel[1] == pixel[2] && pixel[2] > 230;
                 case GameColor.AnyGray:
                     return pixel[0] == pixel[1] && pixel[1] == pixel[2];
 

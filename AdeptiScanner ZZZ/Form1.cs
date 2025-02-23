@@ -489,18 +489,14 @@ namespace AdeptiScanner_ZZZ
 
                         Bitmap artifactSC = ImageProcessing.CaptureScreenshot(saveImages, savedDiscArea, true);
 
-                        //check if artifact already found using hash of pixels, without the right edge due to lock/unlock animation
-                        Bitmap withoutLock = new Bitmap(artifactSC.Width * 3 / 4, artifactSC.Height);
-                        using (Graphics g = Graphics.FromImage(withoutLock))
-                        {
-                            g.DrawImage(artifactSC, 0, 0, new Rectangle(0, 0, artifactSC.Width * 3 / 4, artifactSC.Height), GraphicsUnit.Pixel);
-                        }
-                        BitmapData imgData = withoutLock.LockBits(new Rectangle(0, 0, withoutLock.Width, withoutLock.Height), ImageLockMode.ReadWrite, withoutLock.PixelFormat);
+                        //check if artifact already found using hash of pixels
+
+                        BitmapData imgData = artifactSC.LockBits(new Rectangle(0, 0, artifactSC.Width, artifactSC.Height), ImageLockMode.ReadWrite, artifactSC.PixelFormat);
                         int numBytes = Math.Abs(imgData.Stride) * imgData.Height;
                         byte[] imgBytes = new byte[numBytes];
                         Marshal.Copy(imgData.Scan0, imgBytes, 0, numBytes);
                         //int PixelSize = 4; //ARGB, reverse order
-                        withoutLock.UnlockBits(imgData);
+                        artifactSC.UnlockBits(imgData);
                         //https://stackoverflow.com/a/800469 with some liberty
                         string hash = string.Concat(sha1.ComputeHash(imgBytes).Select(x => x.ToString("X2")));
 
