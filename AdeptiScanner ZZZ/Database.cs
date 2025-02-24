@@ -317,7 +317,7 @@ namespace AdeptiScanner_ZZZ
 
         public static bool discInvalid(Disc item)
         {
-            return false;
+            return !item.main.HasValue || !item.level.HasValue || !item.slot.HasValue || item.subs.Count == 0;
         }
     }
 

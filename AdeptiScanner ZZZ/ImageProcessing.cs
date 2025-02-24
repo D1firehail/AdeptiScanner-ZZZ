@@ -1034,7 +1034,7 @@ namespace AdeptiScanner_ZZZ
             return disc;
         }
 
-        private enum GameColor
+        public enum GameColor
         {
             TextWhiteIsh, // artifact area background color
             TextBrightWhite, // used for artifact level
@@ -1053,7 +1053,8 @@ namespace AdeptiScanner_ZZZ
             LockRed, // lock icon
 
             PerfectBlack, // Disc card background
-            VeryWhite, // Disc card text
+            VeryWhite, // Disc card text, fuzzy
+            PerfectWhite, // Disc card text
             AnyGray, // Any form of black/white/gray
 
             ArtifactLabelB, // B rarity item label in grid
@@ -1067,7 +1068,7 @@ namespace AdeptiScanner_ZZZ
         /// <param name="pixel">span of size 4, containing the BGRA color bytes of a pixel</param>
         /// <param name="color"></param>
         /// <returns></returns>
-        private static bool PixelIsColor(Span<byte> pixel, GameColor color)
+        public static bool PixelIsColor(Span<byte> pixel, GameColor color)
         {
             switch (color)
             {
@@ -1106,6 +1107,8 @@ namespace AdeptiScanner_ZZZ
                     return pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0;
                 case GameColor.VeryWhite:
                     return pixel[0] == pixel[1] && pixel[1] == pixel[2] && pixel[2] > 230;
+                case GameColor.PerfectWhite:
+                    return pixel[0] == pixel[1] && pixel[1] == pixel[2] && pixel[2] == 255;
                 case GameColor.AnyGray:
                     return pixel[0] == pixel[1] && pixel[1] == pixel[2];
 

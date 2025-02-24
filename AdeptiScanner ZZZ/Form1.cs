@@ -59,7 +59,7 @@ namespace AdeptiScanner_ZZZ
         internal string wandererName = "Wanderer";
         internal bool captureOnread = true;
         internal bool saveImagesGlobal = false;
-        internal string clickSleepWait_load = "100";
+        internal string clickSleepWait_load = "200";
         internal string scrollSleepWait_load = "1500";
         internal string scrollTestWait_load = "100";
         internal string recheckWait_load = "300";
@@ -487,16 +487,43 @@ namespace AdeptiScanner_ZZZ
                         clickPos(p.X, p.Y);
                         System.Threading.Thread.Sleep(clickSleepWait);
 
-                        Bitmap artifactSC = ImageProcessing.CaptureScreenshot(saveImages, savedDiscArea, true);
+                        bool imageHasWhite = false;
+                        Bitmap artifactSC = null;
+                        byte[] imgBytes;
+                        int tries = 0;
+                        do
+                        {
+                            if (tries > 0)
+                            {
+                                AppendStatusText("Image still fading. Possibly increase ClickSleepWait in Advanced. Retry " + tries + "" + Environment.NewLine, false);
+                                System.Threading.Thread.Sleep(recheckSleepWait);                                    
+                            }
+                            tries++;
+                            artifactSC = ImageProcessing.CaptureScreenshot(saveImages, savedDiscArea, true);
 
-                        //check if artifact already found using hash of pixels
+                            //check if artifact already found using hash of pixels
+                            int width = artifactSC.Width;
+                            int height = artifactSC.Height;
+                            BitmapData imgData = artifactSC.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadWrite, artifactSC.PixelFormat);
+                            int numBytes = Math.Abs(imgData.Stride) * height;
+                            imgBytes = new byte[numBytes];
+                            Marshal.Copy(imgData.Scan0, imgBytes, 0, numBytes);
+                            //int PixelSize = 4; //ARGB, reverse order
+                            artifactSC.UnlockBits(imgData);
 
-                        BitmapData imgData = artifactSC.LockBits(new Rectangle(0, 0, artifactSC.Width, artifactSC.Height), ImageLockMode.ReadWrite, artifactSC.PixelFormat);
-                        int numBytes = Math.Abs(imgData.Stride) * imgData.Height;
-                        byte[] imgBytes = new byte[numBytes];
-                        Marshal.Copy(imgData.Scan0, imgBytes, 0, numBytes);
-                        //int PixelSize = 4; //ARGB, reverse order
-                        artifactSC.UnlockBits(imgData);
+                            // check beginning of image for perfectly white pixels, to confirm fade is done
+                            for (int j = 0; j < 4 * width * (height / 6); j += 4)
+                            {
+                                var pixel = imgBytes.AsSpan(j, 4);
+                                if (ImageProcessing.PixelIsColor(pixel, ImageProcessing.GameColor.PerfectWhite))
+                                {
+                                    imageHasWhite = true;
+                                    break;
+                                }
+                            }
+
+                        } while (!imageHasWhite && tries <= 3);
+
                         //https://stackoverflow.com/a/800469 with some liberty
                         string hash = string.Concat(sha1.ComputeHash(imgBytes).Select(x => x.ToString("X2")));
 
