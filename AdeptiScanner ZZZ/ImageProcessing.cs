@@ -325,7 +325,7 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-            int streakLength = 0;
+            int width = 0;
             int streakLocation = cols.Length - 1;
             bool isInStreak = false;
 
@@ -335,17 +335,17 @@ namespace AdeptiScanner_ZZZ
                 {
                     if (isInStreak)
                     {
-                        streakLength++;
+                        width++;
                     } else
                     {
-                        streakLength = 1;
+                        width = 1;
                         streakLocation = x;
                         isInStreak = true;
                     }
                 } 
                 else
                 {
-                    if (isInStreak && streakLength > gameAreaHeight / 3)
+                    if (isInStreak && width > gameAreaHeight / 3)
                     {
                         break;
                     } else
@@ -355,16 +355,17 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-            if (!isInStreak || streakLocation - streakLength <= 0)
+            if (!isInStreak || streakLocation - width <= 0)
             {
                 throw new Exception("No long enough streak, or streak ran into edge");
             }
 
             int rightmost = streakLocation;
-            int leftmost = streakLocation - streakLength;
+            int leftmost = streakLocation - width;
 
             int top = 0;
             int verticalBlackStreak = 0;
+            int topBlackHeightRequirement = Math.Max(5, width / 40);
             for (int y = top; y < gameArea.Height - 1; y++)
             {
                 int i = (y * gameArea.Width + leftmost + 1 ) * PixelSize;
@@ -373,7 +374,7 @@ namespace AdeptiScanner_ZZZ
                 {
                     verticalBlackStreak++;
 
-                    if (verticalBlackStreak > 10)
+                    if (verticalBlackStreak > topBlackHeightRequirement)
                     {
                         top = y - verticalBlackStreak;
                         break;
