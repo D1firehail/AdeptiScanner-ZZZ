@@ -632,6 +632,7 @@ namespace AdeptiScanner_ZZZ
             //Get relevant part of image, possibly upscaled
             using (Graphics g = Graphics.FromImage(areaImg))
             {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                 g.DrawImage(img, new Rectangle(0, 0, width, height), area, GraphicsUnit.Pixel);
             }
 
