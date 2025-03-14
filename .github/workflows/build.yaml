@@ -16,7 +16,9 @@ jobs:
           mv "AdeptiScanner ZZZ/bin/Release/net8.0-windows" AdeptiScanner_ZZZ/AdeptiScanner_ZZZ
       - name: Get short SHA
         id: sha
-        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          $sha = (git rev-parse --short HEAD)
+          Write-Output "sha=$($sha)" >> $Env:GITHUB_OUTPUT
       - name: Archive build
         uses: actions/upload-artifact@v4
         with:
