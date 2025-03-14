@@ -620,17 +620,20 @@ namespace AdeptiScanner_ZZZ
         /// <param name="area">Area containing the artifact info</param>
         /// <param name="rows">Filter results per row</param>
         /// <returns>Filtered image of the artifact area</returns>
-        public static Bitmap getDiscImg(Bitmap img, Rectangle area, out int[] rows, bool saveImages)
+        public static Bitmap getDiscImg(Bitmap img, Rectangle area, out int[] rows, bool saveImages, bool upscale)
         {
-            rows = new int[area.Height];
-            //Get relevant part of image
-            Bitmap areaImg = new Bitmap(area.Width, area.Height);
-            using (Graphics g = Graphics.FromImage(areaImg))
-            {
-                g.DrawImage(img, 0, 0, area, GraphicsUnit.Pixel);
-            }
+            int sizeMultiplier = upscale ? 2 : 1;
+            Bitmap areaImg = new Bitmap(area.Width * sizeMultiplier, area.Height * sizeMultiplier);
+
             int width = areaImg.Width;
             int height = areaImg.Height;
+            rows = new int[height];
+
+            //Get relevant part of image, possibly upscaled
+            using (Graphics g = Graphics.FromImage(areaImg))
+            {
+                g.DrawImage(img, new Rectangle(0, 0, width, height), area, GraphicsUnit.Pixel);
+            }
 
             bool fullBlackRow = false;
             bool hasSeenWhite = false;
@@ -885,9 +888,21 @@ namespace AdeptiScanner_ZZZ
             scanArea.SetResolution(96, 96); //make sure DPI doesn't affect OCR results
 
 
-            string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ssff");
             if (saveImages)
-                scanArea.Save(Path.Join(Database.appDir, "images", "GenshinTextRow_" + timestamp + ".png"));
+            {
+                string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ssff");
+                string fileNameBase = Path.Join(Database.appDir, "images", "GenshinTextRow_" + timestamp);
+                int fileNum = 0;
+                string fileName = null;
+                // multiple files may be saved in quick succession, so name needs to be iterative
+                // this does not account for threading
+                while (fileName == null || File.Exists(fileName)) 
+                {
+                    fileName = fileNameBase + "_" + fileNum + ".png";
+                    fileNum++;
+                }
+                scanArea.Save(fileName);
+            }
 
             //Do OCR and append to prevRaw
             string text = prevRaw;

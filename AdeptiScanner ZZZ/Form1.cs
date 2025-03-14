@@ -35,6 +35,7 @@ namespace AdeptiScanner_ZZZ
         private KeyHandler pauseHotkey; // Escape key, pause auto
         private KeyHandler readHotkey; // P key, read stats
         private DateTime soonestAllowedHotkeyUse = DateTime.MinValue; // Used to avoid spam activations and lockups caused by them
+        private bool upscaleFiltered = false;
 
         internal bool autoRunning = false;
         private bool autoCaptureDone = false;
@@ -306,7 +307,7 @@ namespace AdeptiScanner_ZZZ
                       .IsInRole(WindowsBuiltInRole.Administrator);
         }
 
-        private void runOCRThread(int threadIndex, bool weaponMode)
+        private void runOCRThread(int threadIndex, bool weaponMode, bool localUpscaleFiltered)
         {
             Task.Run(RunOCRThreadInternal);
 
@@ -324,7 +325,7 @@ namespace AdeptiScanner_ZZZ
                         Rectangle area = new Rectangle(0, 0, img.Width, img.Height);
                         Bitmap filtered = new Bitmap(img);
 
-                        filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, saveImages);
+                        filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, saveImages, localUpscaleFiltered);
 
                         Disc item = ImageProcessing.getDisc(filtered, rows, saveImages, threadEngines[threadIndex]);
 
@@ -357,13 +358,14 @@ namespace AdeptiScanner_ZZZ
             text_full.Text = "Starting auto-run. ---Press ESCAPE to pause---" + Environment.NewLine;
             autoRunning = true;
             autoCaptureDone = false;
+            bool localUpscaleFiltered = upscaleFiltered;
             registerPauseKey(); //activate pause auto hotkey
             //start worker threads
             for (int i = 0; i < ThreadCount; i++)
             {
                 threadQueues[i] = new ConcurrentQueue<Bitmap>();
                 threadResults[i] = new List<object>();
-                runOCRThread(i, false);
+                runOCRThread(i, false, localUpscaleFiltered);
             }
 
             Task.Run(DiscAutoInternal);
@@ -625,7 +627,7 @@ namespace AdeptiScanner_ZZZ
                     Bitmap filtered = new Bitmap(img);
                     string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ssff");
                     filtered.Save(Path.Join(Database.appDir, "images", "GenshinArtifactImg_" + timestamp + ".png"));
-                    filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, true);
+                    filtered = ImageProcessing.getDiscImg(filtered, area, out int[] rows, true, localUpscaleFiltered);
                     Disc item = ImageProcessing.getDisc(filtered, rows, true, tessEngine);
                     AppendStatusText(item.ToString() + Environment.NewLine, false);
                 }
@@ -747,6 +749,12 @@ namespace AdeptiScanner_ZZZ
                 savedGameArea = tmpGameArea.Value;
                 savedDiscArea = tmpDiscArea.Value;
                 relativeDiscArea = tmpDiscArea.Value;
+                upscaleFiltered = savedDiscArea.Width < 350; // ~375 for 1600x900, ~300 for 720p. OCR accuracy issues start to happen somewhere between those
+                if (upscaleFiltered)
+                {
+                    AppendStatusText("Low resolution detected, using upscaling to improve reliability", false);
+                }
+
                 if (directGameRect != Rectangle.Empty)
                 {
                     savedGameArea.X = savedGameArea.X + directGameRect.X;
@@ -845,7 +853,7 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-            img_Filtered = ImageProcessing.getDiscImg(img_Filtered, readArea, out filtered_rows, saveImages);
+            img_Filtered = ImageProcessing.getDiscImg(img_Filtered, readArea, out filtered_rows, saveImages, upscaleFiltered);
             Disc disc = ImageProcessing.getDisc(img_Filtered, filtered_rows, saveImages, tessEngine);
             if (Database.discInvalid(disc))
             {
