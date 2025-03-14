@@ -57,11 +57,11 @@ namespace AdeptiScanner_ZZZ
         public static string dataVersion = "X.XX";
         //These get filled on startup by other file
         public static Database[] rarityData = new Database[3];
-       
+
 
         public static Dictionary<int, string> CharacterNames = new Dictionary<int, string>();
         public static Dictionary<string, string> SkillTypes = new Dictionary<string, string>();
-        
+
         public static List<DiscSetAndSlot> DiscSets = new List<DiscSetAndSlot>();
         public static List<DiscLevelAndRarity> DiscLevels = new List<DiscLevelAndRarity>();
         public static Dictionary<int, List<DiscMainStat>> DiscMainStats = new();
@@ -184,11 +184,11 @@ namespace AdeptiScanner_ZZZ
 
                     double step = substat["step"].ToObject<double>();
 
-                    bool showDecimal = Math.Abs(Math.Round(step) - step) > 0.001; // difference from rounded value is beyond precision, so it's not intended to be an int
 
-                    for(int i = 1; i <= 6; i++)
+                    for (int i = 1; i <= 6; i++)
                     {
                         double value = step * i;
+                        bool showDecimal = Math.Abs(Math.Round(value) - value) > 0.001; // difference from rounded value is beyond precision, so it's not intended to be an int
 
                         string valueString = showDecimal ? value.ToString("N1", culture) : value.ToString("N0", culture);
 
@@ -234,7 +234,7 @@ namespace AdeptiScanner_ZZZ
             try
             {
                 allJson = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(Path.Join(appDir, "ArtifactInfo.json")));
-            } 
+            }
             catch (Exception e)
             {
                 MessageBox.Show("Error trying to access ArtifactInfo file" + Environment.NewLine + Environment.NewLine +
@@ -243,7 +243,8 @@ namespace AdeptiScanner_ZZZ
                     "Scanner could not start", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(-1);
             }
-            if (allJson.TryGetValue("DataVersion", out JToken ver)) {
+            if (allJson.TryGetValue("DataVersion", out JToken ver))
+            {
                 dataVersion = ver.ToObject<string>();
                 allJson.Remove("DataVersion");
             }
@@ -276,7 +277,7 @@ namespace AdeptiScanner_ZZZ
                         List<DiscMainStat> mainStatList = new();
                         foreach (KeyValuePair<string, JToken> statNameTup in slot["data"].ToObject<JObject>())
                         {
-                            if(statNameTup.Key == "MainStats")
+                            if (statNameTup.Key == "MainStats")
                             {
                                 ReadMainStats(statNameTup.Value.ToObject<JArray>(), mainStatList);
                             }
@@ -298,7 +299,7 @@ namespace AdeptiScanner_ZZZ
                         foreach (KeyValuePair<string, JToken> rarityEntry in tierData)
                         {
                             JArray rarityEntry_arr = rarityEntry.Value.ToObject<JArray>();
-                            
+
                             if (rarityEntry.Key == "Substats")
                             {
                                 rarityData[rarityInt].readSubstats(rarityEntry_arr);
