@@ -7,7 +7,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
       - run: |
           dotnet build "AdeptiScanner ZZZ.sln" -c Release
           mkdir AdeptiScanner_ZZZ
