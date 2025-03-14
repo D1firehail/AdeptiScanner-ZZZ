@@ -1,0 +1,20 @@
+name: dotnet build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0
+      - run: |
+          dotnet build "AdeptiScanner ZZZ.sln"
+          mv "AdeptiScanner ZZZ/bin/Release/net8.0-windows" AdeptiScanner_ZZZ
+      - name: Archive build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Release
+          path: AdeptiScanner_ZZZ
