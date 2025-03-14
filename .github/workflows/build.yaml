@@ -11,7 +11,7 @@ jobs:
         with:
           dotnet-version: 8.0
       - run: |
-          dotnet build "AdeptiScanner ZZZ.sln"
+          dotnet build "AdeptiScanner ZZZ.sln" -c Release
           mv "AdeptiScanner ZZZ/bin/Release/net8.0-windows" AdeptiScanner_ZZZ
       - name: Archive build
         uses: actions/upload-artifact@v4
