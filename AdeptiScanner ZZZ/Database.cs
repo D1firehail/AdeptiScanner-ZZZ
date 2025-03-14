@@ -2,7 +2,9 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -53,7 +55,7 @@ namespace AdeptiScanner_ZZZ
         private static System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-GB", false);
         public static string appDir = Path.Join(Application.StartupPath, "ScannerFiles");
         public static string appdataPath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdeptiScanner_ZZZ");
-        public static string programVersion = "0.4.2";
+        public static string programVersion = "0.4.3";
         public static string dataVersion = "X.XX";
         //These get filled on startup by other file
         public static Database[] rarityData = new Database[3];
@@ -318,7 +320,55 @@ namespace AdeptiScanner_ZZZ
 
         public static bool discInvalid(Disc item)
         {
-            return !item.main.HasValue || !item.level.HasValue || !item.slot.HasValue || item.subs.Count == 0;
+            // missing values
+            if (!item.main.HasValue || !item.level.HasValue || !item.slot.HasValue || item.subs.Count == 0)
+            {
+                return true;
+            }
+
+            // some sub same as main stat
+            if (item.subs.Any(x => x.Key == item.main.Value.Key))
+            {
+                return true;
+            }
+
+            // values needed below for convenience
+            int upgradeSum = item.subs.Sum(x => x.Upgrades);
+            int subCount = item.subs.Count;
+            int level = item.level.Value.Level;
+
+            // duplicate sub keys
+            if (item.subs.DistinctBy(x => x.Key).Count() != subCount)
+            {
+                return true;
+            }
+
+            int subMin = item.level.Value.Tier switch
+            {
+                Rarity.S => 3,
+                Rarity.A => 2,
+                Rarity.B => 1,
+                _ => throw new UnreachableException("Rarity enum was value: " + item.level.Value.Tier),
+            };
+
+            int subMax = item.level.Value.Tier switch
+            {
+                Rarity.S => 4,
+                Rarity.A => 3,
+                Rarity.B => 2,
+                _ => throw new UnreachableException("Rarity enum was value: " + item.level.Value.Tier),
+            };
+
+            subMin += level / 3;
+            subMax += level / 3;
+
+            // too many subs, too few subs, or fewer than max sub count and some sub has more than 1 upgradez
+            if (upgradeSum > subMax || upgradeSum < subMin || (subCount < 4 && upgradeSum != subCount))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 
