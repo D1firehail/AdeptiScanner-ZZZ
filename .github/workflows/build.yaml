@@ -17,5 +17,5 @@ jobs:
       - name: Archive build
         uses: actions/upload-artifact@v4
         with:
-          name: Release
+          name: AdeptiScanner_ZZZ.Release
           path: AdeptiScanner_ZZZ
