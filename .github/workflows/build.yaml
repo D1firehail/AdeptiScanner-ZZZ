@@ -1,0 +1,23 @@
+name: dotnet build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          dotnet build "AdeptiScanner ZZZ.sln" -c Release
+          mkdir AdeptiScanner_ZZZ
+          mv "AdeptiScanner ZZZ/bin/Release/net8.0-windows" AdeptiScanner_ZZZ/AdeptiScanner_ZZZ
+      - name: Get short SHA
+        id: sha
+        run: |
+          $sha = (git rev-parse --short HEAD)
+          Write-Output "sha=$($sha)" >> $Env:GITHUB_OUTPUT
+      - name: Archive build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AdeptiScanner_ZZZ.${{ steps.sha.outputs.sha }}
+          path: AdeptiScanner_ZZZ
