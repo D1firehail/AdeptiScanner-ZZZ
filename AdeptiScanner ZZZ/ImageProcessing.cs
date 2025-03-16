@@ -622,8 +622,8 @@ namespace AdeptiScanner_ZZZ
         /// <returns>Filtered image of the artifact area</returns>
         public static Bitmap getDiscImg(Bitmap img, Rectangle area, out int[] rows, bool saveImages, bool upscale)
         {
-            int sizeMultiplier = upscale ? 2 : 1;
-            Bitmap areaImg = new Bitmap(area.Width * sizeMultiplier, area.Height * sizeMultiplier);
+            double sizeMultiplier = upscale ? 1.75d : 1d;
+            Bitmap areaImg = new Bitmap((int)(area.Width * sizeMultiplier), (int)(area.Height * sizeMultiplier));
 
             int width = areaImg.Width;
             int height = areaImg.Height;

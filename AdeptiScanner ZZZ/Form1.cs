@@ -749,10 +749,11 @@ namespace AdeptiScanner_ZZZ
                 savedGameArea = tmpGameArea.Value;
                 savedDiscArea = tmpDiscArea.Value;
                 relativeDiscArea = tmpDiscArea.Value;
-                upscaleFiltered = savedDiscArea.Width < 350; // ~375 for 1600x900, ~300 for 720p. OCR accuracy issues start to happen somewhere between those
+                //upscaleFiltered = savedDiscArea.Width < 350; // ~600 for 1440p, ~450 for 1080p, ~375 for 1600x900, ~300 for 720p
+                upscaleFiltered = true; //Unknown if upscaling is beneficial at all resolutions, but seems so
                 if (upscaleFiltered)
                 {
-                    AppendStatusText("Low resolution detected, using upscaling to improve reliability", false);
+                    AppendStatusText("Using upscaling to improve reliability", false);
                 }
 
                 if (directGameRect != Rectangle.Empty)
