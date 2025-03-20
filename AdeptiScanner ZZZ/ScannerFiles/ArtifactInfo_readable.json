@@ -1,5 +1,5 @@
 {
-    "DataVersion": "1.6",
+    "DataVersion": "1.6b",
     "Sets": [
         {
             "name": {
@@ -147,7 +147,7 @@
                     },
                     {
                         "name": {
-                            "CRIT DMG": "crit_dmg_"
+                            "CRIT DMG%": "crit_dmg_"
                         },
                         "step": 4.8
                     },
@@ -214,7 +214,7 @@
                     },
                     {
                         "name": {
-                            "CRIT DMG": "crit_dmg_"
+                            "CRIT DMG%": "crit_dmg_"
                         },
                         "step": 3.2
                     },
@@ -281,7 +281,7 @@
                     },
                     {
                         "name": {
-                            "CRIT DMG": "crit_dmg_"
+                            "CRIT DMG%": "crit_dmg_"
                         },
                         "step": 1.6
                     },
@@ -395,27 +395,27 @@
                     },
                     {
                         "name": {
-                            "Electric DMG": "electric_dmg_"
+                            "Electric DMG Bonus": "electric_dmg_"
                         }
                     },
                     {
                         "name": {
-                            "Fire DMG": "fire_dmg_"
+                          "Fire DMG Bonus": "fire_dmg_"
                         }
                     },
                     {
                         "name": {
-                            "Ice DMG": "ice_dmg_"
+                          "Ice DMG Bonus": "ice_dmg_"
                         }
                     },
                     {
                         "name": {
-                            "Physical DMG": "physical_dmg_"
+                          "Physical DMG Bonus": "physical_dmg_"
                         }
                     },
                     {
                         "name": {
-                            "Ether DMG": "ether_dmg_"
+                          "Ether DMG Bonus": "ether_dmg_"
                         }
                     }
                 ]

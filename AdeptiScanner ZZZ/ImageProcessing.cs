@@ -993,6 +993,7 @@ namespace AdeptiScanner_ZZZ
             var disc = new Disc();
 
             string prevRaw = "";
+            int totalError = 0;
             i = 0;
             //Set and slot
             for (; i < textRows.Count; i++)
@@ -1001,6 +1002,7 @@ namespace AdeptiScanner_ZZZ
                 prevRaw = rawText;
                 if (bestMatch.HasValue && dist < 3 && (rawText.Contains('[') || rawText.Contains(']')))
                 {
+                    totalError += dist;
                     disc.slot = bestMatch.Value;
                     i++;
                     break;
@@ -1014,6 +1016,7 @@ namespace AdeptiScanner_ZZZ
                 
                 if (bestMatch.HasValue && dist < 2)
                 {
+                    totalError += dist;
                     disc.level = bestMatch.Value;
                     i++;
                     break;
@@ -1049,6 +1052,7 @@ namespace AdeptiScanner_ZZZ
                 string result = OCRRow(narrowImage, textRows[i].Top, textRows[i].Bottom, Database.DiscMainStats[disc.slot.Value.Slot], out DiscMainStat? bestMatch, out int dist, out string rawText, "", saveImages, tessEngine);
                 if (bestMatch.HasValue && rawText.Length != 0)
                 {
+                    totalError += dist;
                     disc.main = bestMatch.Value;
                     i++;
                     break;
@@ -1067,6 +1071,7 @@ namespace AdeptiScanner_ZZZ
 
                 if (bestMatch.HasValue && dist < 3)
                 {
+                    totalError += dist;
                     disc.subs.Add(bestMatch.Value);
                     if (substat > 2)
                     {
@@ -1081,7 +1086,7 @@ namespace AdeptiScanner_ZZZ
                 }
             }
 
-
+            //Debug.WriteLine("Disc total error: " + totalError);
             return disc;
         }
 
