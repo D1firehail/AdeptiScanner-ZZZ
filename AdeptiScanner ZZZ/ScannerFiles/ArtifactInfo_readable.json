@@ -1,97 +1,107 @@
 {
-    "DataVersion": "1.6b",
-    "Sets": [
-        {
-            "name": {
-                "Woodpecker Electro": "WoodpeckerElectro"
-            }
-        },
-        {
-            "name": {
-                "Puffer Electro": "PufferElectro"
-            }
-        },
-        {
-            "name": {
-                "Shockstar Disco": "ShockstarDisco"
-            }
-        },
-        {
-            "name": {
-                "Freedom Blues": "FreedomBlues"
-            }
-        },
-        {
-            "name": {
-                "Hormone Punk": "HormonePunk"
-            }
-        },
-        {
-            "name": {
-                "Soul Rock": "SoulRock"
-            }
-        },
-        {
-            "name": {
-                "Swing Jazz": "SwingJazz"
-            }
-        },
-        {
-            "name": {
-                "Chaos Jazz": "ChaosJazz"
-            }
-        },
-        {
-            "name": {
-                "Proto Punk": "ProtoPunk"
-            }
-        },
-        {
-            "name": {
-                "Inferno Metal": "InfernoMetal"
-            }
-        },
-        {
-            "name": {
-                "Chaotic Metal": "ChaoticMetal"
-            }
-        },
-        {
-            "name": {
-                "Thunder Metal": "ThunderMetal"
-            }
-        },
-        {
-            "name": {
-                "Polar Metal": "PolarMetal"
-            }
-        },
-        {
-            "name": {
-                "Fanged Metal": "FangedMetal"
-            }
-        },
-        {
-            "name": {
-                "Branch & Blade Song": "BranchBladeSong"
-            }
-        },
-        {
-            "name": {
-                "Astral Voice": "AstralVoice"
-            }
-        },
-        {
-            "name": {
-                "Shadow Harmony": "ShadowHarmony"
-            }
-        },
-        {
-            "name": {
-                "Phaethon's Melody": "PhaethonsMelody"
-            }
-        }
-    ],
+    "DataVersion": "2.0",
+  "Sets": [
+    {
+      "name": {
+        "Woodpecker Electro": "WoodpeckerElectro"
+      }
+    },
+    {
+      "name": {
+        "Puffer Electro": "PufferElectro"
+      }
+    },
+    {
+      "name": {
+        "Shockstar Disco": "ShockstarDisco"
+      }
+    },
+    {
+      "name": {
+        "Freedom Blues": "FreedomBlues"
+      }
+    },
+    {
+      "name": {
+        "Hormone Punk": "HormonePunk"
+      }
+    },
+    {
+      "name": {
+        "Soul Rock": "SoulRock"
+      }
+    },
+    {
+      "name": {
+        "Swing Jazz": "SwingJazz"
+      }
+    },
+    {
+      "name": {
+        "Chaos Jazz": "ChaosJazz"
+      }
+    },
+    {
+      "name": {
+        "Proto Punk": "ProtoPunk"
+      }
+    },
+    {
+      "name": {
+        "Inferno Metal": "InfernoMetal"
+      }
+    },
+    {
+      "name": {
+        "Chaotic Metal": "ChaoticMetal"
+      }
+    },
+    {
+      "name": {
+        "Thunder Metal": "ThunderMetal"
+      }
+    },
+    {
+      "name": {
+        "Polar Metal": "PolarMetal"
+      }
+    },
+    {
+      "name": {
+        "Fanged Metal": "FangedMetal"
+      }
+    },
+    {
+      "name": {
+        "Branch & Blade Song": "BranchBladeSong"
+      }
+    },
+    {
+      "name": {
+        "Astral Voice": "AstralVoice"
+      }
+    },
+    {
+      "name": {
+        "Shadow Harmony": "ShadowHarmony"
+      }
+    },
+    {
+      "name": {
+        "Phaethon's Melody": "PhaethonsMelody"
+      }
+    },
+    {
+      "name": {
+        "Yunkui Tales": "YunkuiTales"
+      }
+    },
+    {
+      "name": {
+        "King of the Summit": "KingOfTheSummit"
+      }
+    }
+  ],
     "DiscTiers": [
         {
             "rarity": "S",
