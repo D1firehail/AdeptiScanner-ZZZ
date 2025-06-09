@@ -61,7 +61,7 @@ namespace AdeptiScanner_ZZZ
         internal bool captureOnread = true;
         internal bool saveImagesGlobal = false;
         internal string clickSleepWait_load = "200";
-        internal string scrollSleepWait_load = "1500";
+        internal string scrollSleepWait_load = "500";
         internal string scrollTestWait_load = "100";
         internal string recheckWait_load = "300";
         internal bool? updateData = null;
@@ -375,14 +375,9 @@ namespace AdeptiScanner_ZZZ
                 Stopwatch runtime = new Stopwatch();
                 runtime.Start();
                 System.Security.Cryptography.SHA1 sha1 = System.Security.Cryptography.SHA1.Create();
-                bool running = true;
-                bool firstRun = true;
                 int nextThread = 0;
                 Rectangle gridArea = new Rectangle(savedGameArea.X, savedGameArea.Y, savedDiscArea.X - savedGameArea.X, savedGameArea.Height);
                 Point gridOffset = new Point(gridArea.X, gridArea.Y);
-                List<string> foundRowHashes = new List<string>();
-                List<(string Hash, Bitmap Image)> lastScrollLastRowHashes = new();
-
 
                 GameVisibilityHandler.bringGameToFront();
 
@@ -393,99 +388,33 @@ namespace AdeptiScanner_ZZZ
                 System.Windows.Forms.Cursor.Position = new Point(savedGameArea.X, savedGameArea.Y);
                 System.Threading.Thread.Sleep(50);
 
-                while (running)
+                //load current grid/scroll location
+                Bitmap gridImg = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
+                List<Point> artifactLocations = ImageProcessing.getArtifactGrid(gridImg, saveImages, gridOffset);
+                List<List<Point>> equalizedGrid = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20);
+                int rowCount = equalizedGrid.Count;
+                int currRowNum = 0;
+                string lastRowHash = string.Empty;
+
+                while (currRowNum < rowCount && equalizedGrid[currRowNum].Count > 0)
                 {
-                    //load current grid/scroll location
-                    Bitmap img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
-                    List<Point> artifactLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
-                    artifactLocations = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20, out int rows);
-
-                    if (artifactLocations.Count == 0)
-                    {
-                        break;
-                    }
-
-                    if (!firstRun)
-                    {
-                        while (pauseAuto)
-                        {
-                            if (hardCancelAuto)
-                            {
-                                goto hard_cancel_pos;
-                            }
-                            if (softCancelAuto)
-                            {
-                                running = false;
-                                pauseAuto = false;
-                                goto soft_cancel_pos;
-                            }
-                            System.Threading.Thread.Sleep(1000);
-                        }
-
-                        // each scroll moves a full row, so scroll as many times as there are rows
-                        for (int i = 0; i < rows; i++)
-                        {
-                            System.Threading.Thread.Sleep(scrollTestWait);
-                            sim.Mouse.VerticalScroll(-1);
-                        }
-
-                        System.Threading.Thread.Sleep(scrollSleepWait);
-                        img = ImageProcessing.CaptureScreenshot(saveImages, gridArea, true);
-                        artifactLocations = ImageProcessing.getArtifactGrid(img, saveImages, gridOffset);
-                        artifactLocations = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20, out rows);
-                    }
-
-
-                    firstRun = false;
-
-                    if (!running && lastScrollLastRowHashes.Count > 0)
-                    {
-                        var finalHash = lastScrollLastRowHashes.Last().Hash;
-                        while (lastScrollLastRowHashes.Count > 1 && lastScrollLastRowHashes[^2].Hash == finalHash)
-                        {
-                            lastScrollLastRowHashes.RemoveAt(lastScrollLastRowHashes.Count - 1);
-                        }
-                    }
-
-
-                    foreach (var tup in lastScrollLastRowHashes)
-                    {
-                        //queue up processing of artifact
-                        threadQueues[nextThread].Enqueue(tup.Image);
-                        nextThread = (nextThread + 1) % ThreadCount;
-                    }
-
-                    lastScrollLastRowHashes.Clear();
-
-                    //select and OCR each artifact in list
-                    int artisPerRow = artifactLocations.Count / rows;
-                    int artisThisRow = 0;
                     List<(string Hash, Bitmap Image)> thisRowHashes = new();
-
-                    for (int i = 0; i < artifactLocations.Count;)
+                    foreach (Point p in equalizedGrid[currRowNum])
                     {
-                        if (artisThisRow == 0)
-                        {
-                            thisRowHashes = new();
-                        }
-                        artisThisRow++;
-
-                        Point p = artifactLocations[i];
                         while (pauseAuto)
                         {
                             if (hardCancelAuto)
                             {
                                 goto hard_cancel_pos;
                             }
-
                             if (softCancelAuto)
                             {
-                                running = false;
                                 pauseAuto = false;
                                 goto soft_cancel_pos;
                             }
                             System.Threading.Thread.Sleep(1000);
                         }
+
                         clickPos(p.X, p.Y);
                         System.Threading.Thread.Sleep(clickSleepWait);
 
@@ -498,7 +427,7 @@ namespace AdeptiScanner_ZZZ
                             if (tries > 0)
                             {
                                 AppendStatusText("Image still fading. Possibly increase ClickSleepWait in Advanced. Retry " + tries + "" + Environment.NewLine, false);
-                                System.Threading.Thread.Sleep(recheckSleepWait);                                    
+                                System.Threading.Thread.Sleep(recheckSleepWait);
                             }
                             tries++;
                             artifactSC = ImageProcessing.CaptureScreenshot(saveImages, savedDiscArea, true);
@@ -530,57 +459,78 @@ namespace AdeptiScanner_ZZZ
                         string hash = string.Concat(sha1.ComputeHash(imgBytes).Select(x => x.ToString("X2")));
 
                         thisRowHashes.Add((hash, artifactSC));
+                    }
 
-                        i++;
-                        if (artisThisRow != artisPerRow)
+
+                    string thisRowHash = string.Concat(thisRowHashes.Select(x => x.Hash));
+
+                    bool enqueue;
+                    bool increment;
+                    bool sleep;
+                    if (currRowNum == rowCount - 2)
+                    {
+                        if (thisRowHash == lastRowHash)
                         {
-                            continue;
+                            enqueue = false;
+                            increment = true;
+                            sleep = false;
                         }
-
-                        artisThisRow = 0;
-
-                        string thisRowHash = string.Concat(thisRowHashes.Select(x => x.Hash));
-
-                        if (foundRowHashes.Contains(thisRowHash))
+                        else
                         {
-                            if (running)
-                            {
-                                AppendStatusText("Duplicate row found, stopping after this screen" + Environment.NewLine, false);
-                            }
-                            running = false;
-                            continue;
+                            enqueue = true;
+                            increment = false;
+                            sleep = true;
                         }
+                    }
+                    else
+                    {
+                        enqueue = true;
+                        increment = true;
+                        sleep = false;
+                    }
 
-                        foundRowHashes.Add(thisRowHash);
+                    lastRowHash = thisRowHash;
 
-                        bool isLastRow = i == artifactLocations.Count;
+                    Debug.WriteLine(thisRowHash);
+                    Debug.WriteLine($"Rows {rowCount}, CurrRow {currRowNum}, Enqueue {enqueue}, increment {increment}, sleep {sleep}");
 
-                        if (isLastRow)
+                    if (enqueue)
+                    {
+                        // last row can have empty spots, resulting in duplication of final item. Remove those
+                        if (currRowNum == rowCount - 1 && rowCount != 1)
                         {
-                            lastScrollLastRowHashes = thisRowHashes;
-
-                            if (!running && thisRowHashes.Count > 0)
+                            for (int i = thisRowHashes.Count - 1; i >= 1; i--)
                             {
-                                var finalHash = thisRowHashes.Last().Hash;
-                                while (thisRowHashes.Count > 1 && thisRowHashes[^2].Hash == finalHash)
+                                if (thisRowHashes[i].Hash != thisRowHashes[i - 1].Hash)
                                 {
-                                    thisRowHashes.RemoveAt(thisRowHashes.Count - 1);
+                                    break;
                                 }
+
+                                thisRowHashes.RemoveAt(i);
                             }
                         }
 
-                        if (!isLastRow || !running)
+                        foreach (var tup in thisRowHashes)
                         {
-                            foreach (var tup in thisRowHashes)
-                            {
-                                //queue up processing of artifact
-                                threadQueues[nextThread].Enqueue(tup.Image);
-                                nextThread = (nextThread + 1) % ThreadCount;
-                            }
+                            //queue up processing of artifact
+                            threadQueues[nextThread].Enqueue(tup.Image);
+                            nextThread = (nextThread + 1) % ThreadCount;
                         }
                     }
 
-                }
+                    if (sleep)
+                    {
+                        Point p = equalizedGrid[currRowNum + 1][0];
+                        clickPos(p.X, p.Y);
+                        System.Threading.Thread.Sleep(scrollSleepWait);
+                    }
+
+                    if (increment)
+                    {
+                        currRowNum++;
+                    }
+
+                } // END WHILE RUNNING
 
             soft_cancel_pos:
 

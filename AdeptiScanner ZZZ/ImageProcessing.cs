@@ -204,7 +204,7 @@ namespace AdeptiScanner_ZZZ
         }
 
 
-        public static List<Point> equalizeGrid(List<Point> rawGrid, int rowTolerance, int colTolerance, out int rowCount)
+        public static List<List<Point>> equalizeGrid(List<Point> rawGrid, int rowTolerance, int colTolerance)
         {
             List<List<Point>> rows = new List<List<Point>>();
             List<List<Point>> cols = new List<List<Point>>();
@@ -273,16 +273,17 @@ namespace AdeptiScanner_ZZZ
             rowCoords.Sort();
             colCoords.Sort();
             //create list of all grid points using row/col data
-            List<Point> equalized = new List<Point>();
+            List<List<Point>> equalized = new List<List<Point>>();
             foreach (int y in rowCoords)
             {
+                List<Point> currRow = new List<Point>();
                 foreach (int x in colCoords)
                 {
-                    equalized.Add(new Point(x, y));
+                    currRow.Add(new Point(x, y));
                 }
+                equalized.Add(currRow);
             }
 
-            rowCount = rowCoords.Count;
             return equalized;
         }
 
