@@ -476,6 +476,16 @@ namespace AdeptiScanner_ZZZ
 
                         } while (!imageHasWhite && tries <= 3);
 
+                        // there's a rare issue where singular pixels in the "slot badge" are slightly inconsistent
+                        // to deal with this, the color resolution for the hash is reduced in roughly the affected area
+                        // since we still differentiate text vs background, hash is still reliable
+                        int simplifiedCheckEnd = (artifactSC.Width * 4) * (artifactSC.Height / 4);
+                        const byte highBitsMask = 0b1100_0000;
+                        for (int i = 0; i < simplifiedCheckEnd; i++)
+                        {
+                            imgBytes[i] &= highBitsMask;
+                        }
+
                         //https://stackoverflow.com/a/800469 with some liberty
                         string hash = string.Concat(sha1.ComputeHash(imgBytes).Select(x => x.ToString("X2")));
                         
