@@ -353,6 +353,13 @@ namespace AdeptiScanner_ZZZ
             }
         }
 
+        private enum TopScrollConfirmationStage
+        {
+            FirstPass,
+            SecondPass,
+            Done
+        }
+
         private void discAuto(bool saveImages, int clickSleepWait = 100, int scrollSleepWait = 1500, int scrollTestWait = 100, int recheckSleepWait = 300)
         {
             text_full.Text = "Starting auto-run. ---Press ESCAPE to pause---" + Environment.NewLine;
@@ -393,8 +400,22 @@ namespace AdeptiScanner_ZZZ
                 List<Point> artifactLocations = ImageProcessing.getArtifactGrid(gridImg, saveImages, gridOffset);
                 List<List<Point>> equalizedGrid = ImageProcessing.equalizeGrid(artifactLocations, gridArea.Height / 20, gridArea.Width / 20);
                 int rowCount = equalizedGrid.Count;
-                int currRowNum = 0;
+                int currRowNum;
+                TopScrollConfirmationStage topScrollConfirmation;
                 string lastRowHash = string.Empty;
+
+                if (rowCount <= 2)
+                {
+                    currRowNum = 0;
+                    topScrollConfirmation = TopScrollConfirmationStage.Done;
+                }
+                else
+                {
+                    // more than 2 rows, need precautions in case clicking top row will scroll us
+                    currRowNum = 1;
+                    topScrollConfirmation = TopScrollConfirmationStage.FirstPass;
+                    AppendStatusText("Checking if upwards scroll is possible" + Environment.NewLine, false);
+                }
 
                 while (currRowNum < rowCount && equalizedGrid[currRowNum].Count > 0)
                 {
@@ -457,7 +478,7 @@ namespace AdeptiScanner_ZZZ
 
                         //https://stackoverflow.com/a/800469 with some liberty
                         string hash = string.Concat(sha1.ComputeHash(imgBytes).Select(x => x.ToString("X2")));
-
+                        
                         thisRowHashes.Add((hash, artifactSC));
                     }
 
@@ -466,33 +487,64 @@ namespace AdeptiScanner_ZZZ
 
                     bool enqueue;
                     bool increment;
-                    bool sleep;
-                    if (currRowNum == rowCount - 2)
+                    int? sleepRowTarget;
+                    if (topScrollConfirmation is TopScrollConfirmationStage.FirstPass)
                     {
+                        // Checking if clicking first row causes scroll
+                        // First pass is just to set up lastRowHash for second pass.
+                        enqueue = false;
+                        increment = false;
+                        sleepRowTarget = 0;
+                        topScrollConfirmation = TopScrollConfirmationStage.SecondPass;
+                    }
+                    else if (topScrollConfirmation is TopScrollConfirmationStage.SecondPass)
+                    {
+                        // Checking if clicking first row caused scroll
                         if (thisRowHash == lastRowHash)
                         {
+                            // No scroll, start on row 0 and ignore these results
+                            enqueue = false;
+                            increment = false;
+                            sleepRowTarget = null;
+                            currRowNum = 0;
+                        } 
+                        else
+                        {
+                            // Scroll happened! This was the top row on first pass, so keep results and go down from here
+                            enqueue = true;
+                            increment = true;
+                            sleepRowTarget = null;
+                        }
+                        // Now good to go for normal operations
+                        topScrollConfirmation = TopScrollConfirmationStage.Done;
+                    }
+                    else if (currRowNum == rowCount - 2 && rowCount > 2)
+                    {
+                        // Second-to-last row on screen may be repeatedly used, as clicking final row may scroll
+                        if (thisRowHash == lastRowHash)
+                        {
+                            // Results repeated, stop repeating row
                             enqueue = false;
                             increment = true;
-                            sleep = false;
+                            sleepRowTarget = null;
                         }
                         else
                         {
+                            // Results differ, click final row to scroll, but repeat this row for now
                             enqueue = true;
                             increment = false;
-                            sleep = true;
+                            sleepRowTarget = currRowNum + 1;
                         }
                     }
                     else
                     {
+                        // Rows without possible scrolling to account for
                         enqueue = true;
                         increment = true;
-                        sleep = false;
+                        sleepRowTarget = null;
                     }
 
                     lastRowHash = thisRowHash;
-
-                    Debug.WriteLine(thisRowHash);
-                    Debug.WriteLine($"Rows {rowCount}, CurrRow {currRowNum}, Enqueue {enqueue}, increment {increment}, sleep {sleep}");
 
                     if (enqueue)
                     {
@@ -518,9 +570,9 @@ namespace AdeptiScanner_ZZZ
                         }
                     }
 
-                    if (sleep)
+                    if (sleepRowTarget.HasValue)
                     {
-                        Point p = equalizedGrid[currRowNum + 1][0];
+                        Point p = equalizedGrid[sleepRowTarget.Value][0];
                         clickPos(p.X, p.Y);
                         System.Threading.Thread.Sleep(scrollSleepWait);
                     }
