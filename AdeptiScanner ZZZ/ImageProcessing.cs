@@ -354,7 +354,7 @@ namespace AdeptiScanner_ZZZ
 
             for(int x = cols.Length - 1; x >= 0; x--)
             {
-                if (cols[x] > gameAreaHeight * 0.25)
+                if (cols[x] > gameAreaHeight * 0.125) // 0.25 borderline too high, 0.05 seemingly works. Middle ground chosen
                 {
                     if (isInStreak)
                     {
