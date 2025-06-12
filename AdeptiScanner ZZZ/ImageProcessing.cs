@@ -316,6 +316,9 @@ namespace AdeptiScanner_ZZZ
             var gameAreaWidth = gameArea.Width;
             var gameAreaHeight = gameArea.Height;
 
+            int topEntirelyGrayRow = 0;
+            bool rowIsEntirelyGray = false;
+
             for (int i = 0; i < numBytes; i += PixelSize)
             {
                 int x = (i / PixelSize) % gameAreaWidth;
@@ -323,6 +326,25 @@ namespace AdeptiScanner_ZZZ
                 if (PixelIsColor(pixel, GameColor.PerfectBlack) || PixelIsColor(pixel, GameColor.VeryWhite)) //look for artifact name background colour
                 {
                     cols[x]++;
+                }
+
+                if (x == 0 && topEntirelyGrayRow == 0)
+                {
+                    if (rowIsEntirelyGray)
+                    {
+                        int y = (i / PixelSize) / gameAreaWidth;
+                        rowIsEntirelyGray = false;
+                        topEntirelyGrayRow = y;
+
+                    } else
+                    {
+                        rowIsEntirelyGray = true;
+                    }
+                }
+
+                if (rowIsEntirelyGray && !PixelIsColor(pixel, GameColor.AnyGray))
+                {
+                    rowIsEntirelyGray = false;
                 }
             }
 
@@ -364,7 +386,7 @@ namespace AdeptiScanner_ZZZ
             int rightmost = streakLocation;
             int leftmost = streakLocation - width;
 
-            int top = 0;
+            int top = topEntirelyGrayRow;
             int verticalBlackStreak = 0;
             int topBlackHeightRequirement = Math.Max(5, width / 40);
             for (int y = top; y < gameArea.Height - 1; y++)
@@ -393,22 +415,22 @@ namespace AdeptiScanner_ZZZ
             // find preliminary bottom by looking for the longest streak of any form of gray (or black or white) starting from top
             for (int y = top; y < gameAreaHeight; y++)
             {
-                int i = (y * gameArea.Width + leftmost + 1) * PixelSize;
-                var pixel = imgBytes.AsSpan(i, 4);
+                    int i = (y * gameArea.Width + leftmost + 1) * PixelSize;
+                    var pixel = imgBytes.AsSpan(i, 4);
 
-                if (PixelIsColor(pixel, GameColor.AnyGray))
-                {
-                    verticalGrayStreak++;
-                    if (verticalGrayStreak > bestGrayStreak)
+                    if (PixelIsColor(pixel, GameColor.AnyGray))
                     {
-                        bestGrayStreak = verticalGrayStreak;
-                        prelimBottom = y;
+                        verticalGrayStreak++;
+                        if (verticalGrayStreak > bestGrayStreak)
+                        {
+                            bestGrayStreak = verticalGrayStreak;
+                            prelimBottom = y;
+                        }
+                    } 
+                    else
+                    {
+                        verticalGrayStreak = 0;
                     }
-                } 
-                else
-                {
-                    verticalGrayStreak = 0;
-                }
             }
 
             // then, improve the guess by taking the lowest white above the preliminary bottom
