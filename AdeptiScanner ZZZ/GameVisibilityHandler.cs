@@ -57,14 +57,32 @@ namespace AdeptiScanner_ZZZ
                 return false;
             }
 
-            RECT rct;
+            RECT windowRect;
+            RECT clientRect;
 
-            bool ans = GetWindowRect(game.ToInt32(), out rct);
-            if (ans)
+            // windowRect includes drop shadow and window header
+            // clientRect is correct game size, but not location
+            bool windowRectValid = GetWindowRect(game.ToInt32(), out windowRect);
+            bool clientRectValid = GetClientRect(game.ToInt32(), out clientRect);
+            if (!windowRectValid || !clientRectValid)
             {
-                gameLocation = new System.Drawing.Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top);
+                return false;
             }
-            return ans;
+
+            var gameWidth = clientRect.Right - clientRect.Left;
+            var gameHeight = clientRect.Bottom - clientRect.Top;
+
+            var windowWidth = windowRect.Right - windowRect.Left;
+            var windowHeight = windowRect.Bottom - windowRect.Top;
+
+            var extraWidth = windowWidth - gameWidth; // drop shadow on each side
+            var extraHeight = windowHeight - gameHeight; // window header at the top, drop shadow at the bottom
+
+            var dropShadowWidth = extraWidth / 2;
+            var titleBarHeight = extraHeight - dropShadowWidth;
+
+            gameLocation = new System.Drawing.Rectangle(windowRect.Left + dropShadowWidth, windowRect.Top + titleBarHeight, gameWidth, gameHeight);
+            return true;
         }
 
         public static bool? IsGameFocused()
@@ -112,6 +130,9 @@ namespace AdeptiScanner_ZZZ
 
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool GetWindowRect(int hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool GetClientRect(int hWnd, out RECT lpRect);
 
     }
 }
