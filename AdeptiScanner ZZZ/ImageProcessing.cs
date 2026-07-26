@@ -981,6 +981,17 @@ namespace AdeptiScanner_ZZZ
 
             var avgHeight = textRows.Average(x => x.Bottom - x.Top);
 
+            // Top row (set name + slot) can wrap to two lines
+            // Normally not an issue, but the lines of text can actually overlap if there is a character like 'g' in the set name
+            // Manually split the top row into two lines if it happens to be abnormally large
+            if (textRows[0].Bottom - textRows[0].Top > avgHeight * 2)
+            {
+                var top = textRows[0].Top;
+                var bot = textRows[0].Bottom;
+                var half = top + (bot - top) / 2;
+                textRows.Insert(1, (half, textRows[0].Bottom));
+                textRows[0] = (top, half);
+            }
             var originalTextRows = textRows.ToList();
 
             for (int j = 0; j < originalTextRows.Count; j++)

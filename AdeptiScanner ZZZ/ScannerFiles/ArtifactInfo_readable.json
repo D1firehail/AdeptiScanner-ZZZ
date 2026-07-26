@@ -1,137 +1,147 @@
 {
-  "DataVersion": "2.7",
-  "Sets": [
-    {
-      "name": {
-        "Woodpecker Electro": "WoodpeckerElectro"
-      }
-    },
-    {
-      "name": {
-        "Puffer Electro": "PufferElectro"
-      }
-    },
-    {
-      "name": {
-        "Shockstar Disco": "ShockstarDisco"
-      }
-    },
-    {
-      "name": {
-        "Freedom Blues": "FreedomBlues"
-      }
-    },
-    {
-      "name": {
-        "Hormone Punk": "HormonePunk"
-      }
-    },
-    {
-      "name": {
-        "Soul Rock": "SoulRock"
-      }
-    },
-    {
-      "name": {
-        "Swing Jazz": "SwingJazz"
-      }
-    },
-    {
-      "name": {
-        "Chaos Jazz": "ChaosJazz"
-      }
-    },
-    {
-      "name": {
-        "Proto Punk": "ProtoPunk"
-      }
-    },
-    {
-      "name": {
-        "Inferno Metal": "InfernoMetal"
-      }
-    },
-    {
-      "name": {
-        "Chaotic Metal": "ChaoticMetal"
-      }
-    },
-    {
-      "name": {
-        "Thunder Metal": "ThunderMetal"
-      }
-    },
-    {
-      "name": {
-        "Polar Metal": "PolarMetal"
-      }
-    },
-    {
-      "name": {
-        "Fanged Metal": "FangedMetal"
-      }
-    },
-    {
-      "name": {
-        "Branch & Blade Song": "BranchBladeSong"
-      }
-    },
-    {
-      "name": {
-        "Astral Voice": "AstralVoice"
-      }
-    },
-    {
-      "name": {
-        "Shadow Harmony": "ShadowHarmony"
-      }
-    },
-    {
-      "name": {
-        "Phaethon's Melody": "PhaethonsMelody"
-      }
-    },
-    {
-      "name": {
-        "Yunkui Tales": "YunkuiTales"
-      }
-    },
-    {
-      "name": {
-        "King of the Summit": "KingOfTheSummit"
-      }
-    },
-    {
-      "name": {
-        "Dawn's Bloom'": "DawnsBloom"
-      }
-    },
-    {
-      "name": {
-        "Moonlight Lullaby": "MoonlightLullaby"
-      }
-    },
-    {
-      "name": {
-        "White Water Ballad": "WhiteWaterBallad"
-      }
-    },
-    {
-      "name": {
-        "Shining Aria": "ShiningAria"
-      }
-    },
-    {
-      "name": {
-        "Bunny in Wonderland'": "BunnyInWonderland"
-      }
-    },
-    {
-      "name": {
-        "Notes From the Chained": "NotesFromTheChained"
-      }
-    }
-  ],
+    "DataVersion": "3.0",
+    "Sets": [
+        {
+            "name": {
+                "Woodpecker Electro": "WoodpeckerElectro"
+            }
+        },
+        {
+            "name": {
+                "Puffer Electro": "PufferElectro"
+            }
+        },
+        {
+            "name": {
+                "Shockstar Disco": "ShockstarDisco"
+            }
+        },
+        {
+            "name": {
+                "Freedom Blues": "FreedomBlues"
+            }
+        },
+        {
+            "name": {
+                "Hormone Punk": "HormonePunk"
+            }
+        },
+        {
+            "name": {
+                "Soul Rock": "SoulRock"
+            }
+        },
+        {
+            "name": {
+                "Swing Jazz": "SwingJazz"
+            }
+        },
+        {
+            "name": {
+                "Chaos Jazz": "ChaosJazz"
+            }
+        },
+        {
+            "name": {
+                "Proto Punk": "ProtoPunk"
+            }
+        },
+        {
+            "name": {
+                "Inferno Metal": "InfernoMetal"
+            }
+        },
+        {
+            "name": {
+                "Chaotic Metal": "ChaoticMetal"
+            }
+        },
+        {
+            "name": {
+                "Thunder Metal": "ThunderMetal"
+            }
+        },
+        {
+            "name": {
+                "Polar Metal": "PolarMetal"
+            }
+        },
+        {
+            "name": {
+                "Fanged Metal": "FangedMetal"
+            }
+        },
+        {
+            "name": {
+                "Branch & Blade Song": "BranchBladeSong"
+            }
+        },
+        {
+            "name": {
+                "Astral Voice": "AstralVoice"
+            }
+        },
+        {
+            "name": {
+                "Shadow Harmony": "ShadowHarmony"
+            }
+        },
+        {
+            "name": {
+                "Phaethon's Melody": "PhaethonsMelody"
+            }
+        },
+        {
+            "name": {
+                "Yunkui Tales": "YunkuiTales"
+            }
+        },
+        {
+            "name": {
+                "King of the Summit": "KingOfTheSummit"
+            }
+        },
+        {
+            "name": {
+                "Dawn's Bloom": "DawnsBloom"
+            }
+        },
+        {
+            "name": {
+                "Moonlight Lullaby": "MoonlightLullaby"
+            }
+        },
+        {
+            "name": {
+                "White Water Ballad": "WhiteWaterBallad"
+            }
+        },
+        {
+            "name": {
+                "Shining Aria": "ShiningAria"
+            }
+        },
+        {
+            "name": {
+                "Bunny in Wonderland": "BunnyInWonderland"
+            }
+        },
+        {
+            "name": {
+                "Notes From the Chained": "NotesFromTheChained"
+            }
+        },
+        {
+            "name": {
+                "Wuthering Salon": "WutheringSalon"
+            }
+        },
+        {
+            "name": {
+                "The Sky Ablaze": "TheSkyAblaze"
+            }
+        }
+    ],
     "DiscTiers": [
         {
             "rarity": "S",
@@ -440,22 +450,22 @@
                     },
                     {
                         "name": {
-                          "Fire DMG Bonus": "fire_dmg_"
+                            "Fire DMG Bonus": "fire_dmg_"
                         }
                     },
                     {
                         "name": {
-                          "Ice DMG Bonus": "ice_dmg_"
+                            "Ice DMG Bonus": "ice_dmg_"
                         }
                     },
                     {
                         "name": {
-                          "Physical DMG Bonus": "physical_dmg_"
+                            "Physical DMG Bonus": "physical_dmg_"
                         }
                     },
                     {
                         "name": {
-                          "Ether DMG Bonus": "ether_dmg_"
+                            "Ether DMG Bonus": "ether_dmg_"
                         }
                     }
                 ]
