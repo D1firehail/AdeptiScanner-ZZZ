@@ -896,18 +896,24 @@ namespace AdeptiScanner_ZZZ
         /// <param name="dist">Levenshtein distance to closest match</param>
         /// <param name="rawText">Raw result from OCR process (appended to <paramref name="prevRaw"/>)</param>
         /// <param name="prevRaw">String to append in front of raw OCR result before searching for match</param>
+        /// <param name="saveImages">Whether to save the OCR crop to disk for debugging</param>
+        /// <param name="tessEngine">Tesseract engine used for OCR</param>
+        /// <param name="pageSegMode">Page segmentation mode for tesseract</param>
         /// <returns>Closest matching word</returns>
-        public static string OCRRow<T>(Bitmap img, int start, int stop, List<T> validText, out T? result, out int dist, out string rawText, string prevRaw, bool saveImages, TesseractEngine tessEngine) where T: struct, IParsableData
+        public static string OCRRow<T>(Bitmap img, int start, int stop, List<T> validText, out T? result, out int dist, out string rawText, string prevRaw, bool saveImages, TesseractEngine tessEngine, PageSegMode pageSegMode = PageSegMode.SingleBlock) where T: struct, IParsableData
         {
 
             //tessEngine.SetVariable("tessedit_char_whitelist", @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ9876543210+%,:() ");
             //Copy relevant part of image
+            //Pad with a white border so glyphs touching the crop edge aren't clipped during OCR
+            const int pad = 8;
             int height = stop - start;
-            Bitmap scanArea = new Bitmap(img.Width, height);
+            Bitmap scanArea = new Bitmap(img.Width + pad * 2, height + pad * 2);
             using (Graphics g = Graphics.FromImage(scanArea))
             {
+                g.Clear(Color.White);
                 Rectangle sourceRect = new Rectangle(0, start, img.Width, height);
-                g.DrawImage(img, 0, 0, sourceRect, GraphicsUnit.Pixel);
+                g.DrawImage(img, pad, pad, sourceRect, GraphicsUnit.Pixel);
             }
             scanArea.SetResolution(96, 96); //make sure DPI doesn't affect OCR results
 
@@ -930,7 +936,7 @@ namespace AdeptiScanner_ZZZ
 
             //Do OCR and append to prevRaw
             string text = prevRaw;
-            using (var page = tessEngine.Process(scanArea, PageSegMode.SingleBlock))
+            using (var page = tessEngine.Process(scanArea, pageSegMode))
             {
                 using (var iterator = page.GetIterator())
                 {
@@ -1021,7 +1027,7 @@ namespace AdeptiScanner_ZZZ
             //Set and slot
             for (; i < textRows.Count; i++)
             {
-                string result = OCRRow(img, textRows[i].Top, textRows[i].Bottom, Database.DiscSets, out DiscSetAndSlot? bestMatch, out int dist, out string rawText, prevRaw, saveImages, tessEngine);
+                string result = OCRRow(img, textRows[i].Top, textRows[i].Bottom, Database.DiscSets, out DiscSetAndSlot? bestMatch, out int dist, out string rawText, prevRaw, saveImages, tessEngine, PageSegMode.SparseText);
                 prevRaw = rawText;
                 if (bestMatch.HasValue && dist < 3 && (rawText.Contains('[') || rawText.Contains(']')))
                 {
